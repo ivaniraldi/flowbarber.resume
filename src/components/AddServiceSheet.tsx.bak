@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { PREDEFINED_SERVICES } from "@/lib/constants";
-import type { Service, PredefinedService } from "@/lib/types";
+import type { Service } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,7 +30,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Banknote, CreditCard, CheckCircle } from "lucide-react";
 import { ScrollArea } from "./ui/scroll-area";
-import { cn } from "@/lib/utils";
 
 interface AddServiceSheetProps {
   isOpen: boolean;
@@ -53,8 +52,6 @@ export function AddServiceSheet({
   onSave,
   serviceToEdit,
 }: AddServiceSheetProps) {
-  const [selectedServices, setSelectedServices] = useState<PredefinedService[]>([]);
-  
   const form = useForm<z.infer<typeof serviceSchema>>({
     resolver: zodResolver(serviceSchema),
     defaultValues: {
@@ -71,61 +68,27 @@ export function AddServiceSheet({
         price: serviceToEdit.price,
         paymentMethod: serviceToEdit.paymentMethod,
       });
-      setSelectedServices([]);
     } else {
-        const newName = selectedServices.map(s => s.name).join(', ');
-        const newPrice = selectedServices.reduce((acc, s) => acc + s.price, 0);
-        form.setValue('name', newName);
-        form.setValue('price', newPrice);
-    }
-  }, [selectedServices, form]);
-
-  useEffect(() => {
-    if (isOpen) {
-        if (serviceToEdit) {
-          form.reset({
-            name: serviceToEdit.name,
-            price: serviceToEdit.price,
-            paymentMethod: serviceToEdit.paymentMethod,
-          });
-          setSelectedServices([{name: serviceToEdit.name, price: serviceToEdit.price}]);
-        } else {
-          form.reset({
-            name: "",
-            price: 0,
-            paymentMethod: "efectivo",
-          });
-          setSelectedServices([]);
-        }
+      form.reset({
+        name: "",
+        price: 0,
+        paymentMethod: "efectivo",
+      });
     }
   }, [serviceToEdit, isOpen, form]);
 
   const onSubmit = (data: z.infer<typeof serviceSchema>) => {
-    if (data.name && data.price > 0) {
-        const service: Service = {
-          id: serviceToEdit?.id || new Date().toISOString(),
-          ...data,
-        };
-        onSave(service);
-    }
+    const service: Service = {
+      id: serviceToEdit?.id || new Date().toISOString(),
+      ...data,
+    };
+    onSave(service);
   };
   
-  const handlePredefinedClick = (service: PredefinedService) => {
-    if(serviceToEdit) return;
-
-    setSelectedServices(prev => {
-        const isSelected = prev.find(s => s.name === service.name);
-        if (isSelected) {
-            return prev.filter(s => s.name !== service.name);
-        } else {
-            return [...prev, service];
-        }
-    });
+  const handlePredefinedClick = (service: {name: string, price: number}) => {
+    form.setValue('name', service.name);
+    form.setValue('price', service.price);
   };
-  
-  const isServiceSelected = (service: PredefinedService) => {
-    return !!selectedServices.find(s => s.name === service.name);
-  }
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
@@ -137,7 +100,7 @@ export function AddServiceSheet({
           <SheetDescription>
             {serviceToEdit
               ? "Atualize os detalhes do serviço."
-              : "Selecione um ou mais serviços predefinidos ou adicione um personalizado."}
+              : "Selecione um serviço predefinido ou adicione um personalizado."}
           </SheetDescription>
         </SheetHeader>
 
@@ -147,7 +110,7 @@ export function AddServiceSheet({
               <div className="space-y-6 py-4">
                 <Tabs defaultValue="predefined">
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="predefined" disabled={!!serviceToEdit}>Serviços</TabsTrigger>
+                    <TabsTrigger value="predefined">Serviços</TabsTrigger>
                     <TabsTrigger value="custom">Personalizado</TabsTrigger>
                   </TabsList>
                   <TabsContent value="predefined" className="mt-4 space-y-2">
@@ -155,13 +118,13 @@ export function AddServiceSheet({
                       <Button
                         type="button"
                         key={service.name}
-                        variant={isServiceSelected(service) ? "default" : "outline"}
-                        className={cn("w-full justify-start h-auto py-3", isServiceSelected(service) && "ring-2 ring-primary-focus")}
+                        variant="outline"
+                        className="w-full justify-start h-auto py-3"
                         onClick={() => handlePredefinedClick(service)}
                       >
-                         <div className="flex justify-between items-center w-full">
+                        <div className="flex justify-between items-center w-full">
                           <span className="text-left">{service.name}</span>
-                          <span className={cn("font-bold", isServiceSelected(service) ? "text-primary-foreground" : "text-secondary")}>R$ {service.price.toFixed(2)}</span>
+                          <span className="font-bold text-secondary">R$ {service.price.toFixed(2)}</span>
                         </div>
                       </Button>
                     ))}
@@ -174,12 +137,7 @@ export function AddServiceSheet({
                         <FormItem>
                           <FormLabel>Nome do Serviço</FormLabel>
                           <FormControl>
-                            <Input placeholder="Ex: Hidratação" {...field} 
-                             onChange={(e) => {
-                                field.onChange(e);
-                                setSelectedServices([]);
-                            }}
-                            />
+                            <Input placeholder="Ex: Hidratação" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -192,12 +150,7 @@ export function AddServiceSheet({
                         <FormItem>
                           <FormLabel>Preço (R$)</FormLabel>
                           <FormControl>
-                            <Input type="number" placeholder="25.00" {...field}
-                            onChange={(e) => {
-                                field.onChange(e);
-                                setSelectedServices([]);
-                            }}
-                            />
+                            <Input type="number" placeholder="25.00" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -208,27 +161,16 @@ export function AddServiceSheet({
                 
                 <FormField
                   control={form.control}
-                  name="price"
+                  name="name"
                   render={({ field }) => (
                       <FormItem className="rounded-md border p-4 bg-muted/20">
-                          <FormLabel className="text-sm text-muted-foreground">Total</FormLabel>
-                           <div className="flex items-baseline">
-                                <span className="text-2xl font-bold">R$</span>
-                                <FormControl>
-                                    <Input 
-                                      type="number"
-                                      readOnly 
-                                      className="text-2xl font-bold border-0 bg-transparent shadow-none px-1 h-auto focus-visible:ring-0" 
-                                      {...field} 
-                                      value={field.value || '0.00'}
-                                    />
-                                </FormControl>
-                           </div>
-                          <FormMessage />
+                      <FormControl>
+                          <Input readOnly className="text-lg font-bold border-0 bg-transparent shadow-none px-0 focus-visible:ring-0" placeholder="Serviço selecionado" {...field} />
+                      </FormControl>
+                      <FormMessage />
                       </FormItem>
                   )}
                   />
-
 
                 <FormField
                   control={form.control}
@@ -239,11 +181,11 @@ export function AddServiceSheet({
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
-                          value={field.value}
+                          defaultValue={field.value}
                           className="grid grid-cols-2 gap-4"
                         >
                           <FormItem>
-                             <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", field.value === 'efectivo' && "border-primary")}>
+                             <Label className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
                               <FormControl>
                                   <RadioGroupItem value="efectivo" className="sr-only" />
                               </FormControl>
@@ -252,7 +194,7 @@ export function AddServiceSheet({
                              </Label>
                           </FormItem>
                           <FormItem>
-                            <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", field.value === 'pagamento online' && "border-primary")}>
+                            <Label className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
                               <FormControl>
                                   <RadioGroupItem value="pagamento online" className="sr-only" />
                               </FormControl>
