@@ -20,7 +20,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, RefreshCw, Scissors, FilePdf } from "lucide-react";
+import { Plus, RefreshCw, Scissors, FileText } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
 import jsPDF from "jspdf";
@@ -194,7 +194,7 @@ ${services
                 <WhatsAppIcon className="h-5 w-5" />
               </Button>
               <Button variant="ghost" size="icon" onClick={handleSharePdf} disabled={services.length === 0}>
-                <FilePdf className="h-5 w-5" />
+                <FileText className="h-5 w-5" />
               </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
