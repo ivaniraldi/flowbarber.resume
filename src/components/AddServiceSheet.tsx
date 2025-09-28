@@ -65,20 +65,13 @@ export function AddServiceSheet({
   });
 
   useEffect(() => {
-    if (serviceToEdit) {
-      form.reset({
-        name: serviceToEdit.name,
-        price: serviceToEdit.price,
-        paymentMethod: serviceToEdit.paymentMethod,
-      });
-      setSelectedServices([]);
-    } else {
-        const newName = selectedServices.map(s => s.name).join(', ');
-        const newPrice = selectedServices.reduce((acc, s) => acc + s.price, 0);
-        form.setValue('name', newName);
-        form.setValue('price', newPrice);
+    if (!serviceToEdit) {
+      const newName = selectedServices.map(s => s.name).join(', ');
+      const newPrice = selectedServices.reduce((acc, s) => acc + s.price, 0);
+      form.setValue('name', newName);
+      form.setValue('price', newPrice);
     }
-  }, [selectedServices, form]);
+  }, [selectedServices, serviceToEdit, form]);
 
   useEffect(() => {
     if (isOpen) {
@@ -88,7 +81,7 @@ export function AddServiceSheet({
             price: serviceToEdit.price,
             paymentMethod: serviceToEdit.paymentMethod,
           });
-          setSelectedServices([{name: serviceToEdit.name, price: serviceToEdit.price}]);
+          setSelectedServices([]);
         } else {
           form.reset({
             name: "",
