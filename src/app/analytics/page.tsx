@@ -60,8 +60,8 @@ export default function AnalyticsPage() {
         break;
       case '7':
       default:
-        start = startOfWeek(now, { locale: ptBR });
-        end = endOfWeek(now, { locale: ptBR });
+        start = startOfWeek(now, { locale: ptBR, weekStartsOn: 1 });
+        end = endOfWeek(now, { locale: ptBR, weekStartsOn: 1 });
         break;
     }
     
