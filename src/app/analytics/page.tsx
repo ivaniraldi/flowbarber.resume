@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/select';
 import { useServices } from '@/hooks/use-services';
 import type { Service } from '@/lib/types';
-import { subDays, format, parseISO, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, getDate, setDate } from 'date-fns';
+import { subDays, format, parseISO, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, getDate, setDate, startOfYear, endOfYear, getMonth, setMonth, startOfQuarter, endOfQuarter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Header } from '@/components/Header';
 import { Banknote, CreditCard, Wallet, Scissors, FileText } from 'lucide-react';
@@ -39,7 +39,7 @@ import WhatsAppIcon from '@/components/icons/WhatsAppIcon';
 import jsPDF from 'jspdf';
 
 
-type RangeKey = '7' | '15' | '30';
+type RangeKey = '7' | '15' | '30' | '180' | '365' | 'all';
 
 export default function AnalyticsPage() {
   const { services: allServices, isLoaded } = useServices();
@@ -64,6 +64,30 @@ export default function AnalyticsPage() {
       case '30':
         start = startOfMonth(now);
         end = endOfMonth(now);
+        break;
+      case '180':
+        const currentMonth = getMonth(now);
+        if (currentMonth < 6) { // Primeiro semestre
+          start = startOfYear(now);
+          end = setMonth(startOfYear(now), 5);
+          end = endOfMonth(end);
+        } else { // Segundo semestre
+          start = setMonth(startOfYear(now), 6);
+          end = endOfYear(now);
+        }
+        break;
+      case '365':
+        start = startOfYear(now);
+        end = endOfYear(now);
+        break;
+      case 'all':
+        if (allServices.length > 0) {
+          start = allServices.reduce((min, s) => s.date && new Date(s.date) < min ? new Date(s.date) : min, new Date());
+          end = allServices.reduce((max, s) => s.date && new Date(s.date) > max ? new Date(s.date) : max, new Date(0));
+        } else {
+          start = now;
+          end = now;
+        }
         break;
       case '7':
       default:
@@ -96,31 +120,59 @@ export default function AnalyticsPage() {
   }, [services]);
 
   const chartData = useMemo(() => {
-    const dataByDay: { [key: string]: { total: number; count: number } } = {};
-    const loopStartDate = new Date(startDate);
-    const loopEndDate = new Date(endDate) > new Date() ? new Date() : new Date(endDate);
+    const isLongRange = ['180', '365', 'all'].includes(range);
+    
+    if (isLongRange) {
+        const dataByMonth: { [key: string]: { total: number; count: number } } = {};
+        
+        services.forEach((service) => {
+            if (service.date) {
+                const month = format(parseISO(service.date), 'yyyy-MM');
+                if (!dataByMonth[month]) {
+                    dataByMonth[month] = { total: 0, count: 0 };
+                }
+                dataByMonth[month].total += service.price;
+                dataByMonth[month].count += 1;
+            }
+        });
 
-    for (let d = loopStartDate; d <= loopEndDate; d.setDate(d.getDate() + 1)) {
-        const key = format(d, 'yyyy-MM-dd');
-        dataByDay[key] = { total: 0, count: 0 };
-    }
+        return Object.entries(dataByMonth).map(([date, values]) => ({
+            date: format(parseISO(`${date}-01`), 'MMM/yy', { locale: ptBR }),
+            total: values.total,
+            serviços: values.count,
+        })).sort((a, b) => {
+            const dateA = new Date(a.date.split('/')[1], ptBR.localize?.month(ptBR.monthStarts.indexOf(a.date.split('/')[0].replace('.', ''))) as number);
+            const dateB = new Date(b.date.split('/')[1], ptBR.localize?.month(ptBR.monthStarts.indexOf(b.date.split('/')[0].replace('.', ''))) as number);
+            return dateA.getTime() - dateB.getTime();
+        });
 
-    services.forEach((service) => {
-      if (service.date) {
-        const day = format(parseISO(service.date), 'yyyy-MM-dd');
-        if (dataByDay[day]) {
-            dataByDay[day].total += service.price;
-            dataByDay[day].count += 1;
+    } else {
+        const dataByDay: { [key: string]: { total: number; count: number } } = {};
+        const loopStartDate = new Date(startDate);
+        const loopEndDate = new Date(endDate) > new Date() ? new Date() : new Date(endDate);
+    
+        for (let d = loopStartDate; d <= loopEndDate; d.setDate(d.getDate() + 1)) {
+            const key = format(d, 'yyyy-MM-dd');
+            dataByDay[key] = { total: 0, count: 0 };
         }
-      }
-    });
-
-    return Object.entries(dataByDay).map(([date, values]) => ({
-      date: format(parseISO(date), 'dd/MM'),
-      total: values.total,
-      serviços: values.count,
-    })).sort((a, b) => a.date.localeCompare(b.date));
-  }, [services, startDate, endDate]);
+    
+        services.forEach((service) => {
+          if (service.date) {
+            const day = format(parseISO(service.date), 'yyyy-MM-dd');
+            if (dataByDay[day]) {
+                dataByDay[day].total += service.price;
+                dataByDay[day].count += 1;
+            }
+          }
+        });
+    
+        return Object.entries(dataByDay).map(([date, values]) => ({
+          date: format(parseISO(date), 'dd/MM'),
+          total: values.total,
+          serviços: values.count,
+        })).sort((a, b) => a.date.localeCompare(b.date));
+    }
+  }, [services, startDate, endDate, range]);
   
   const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace('.', ',')}`;
   const dateRangeLabel = `${format(startDate, 'd MMM', { locale: ptBR })} - ${format(endDate, 'd MMM, yyyy', { locale: ptBR })}`;
@@ -129,6 +181,9 @@ export default function AnalyticsPage() {
     '7': 'Resumo Semanal',
     '15': 'Resumo Quincenal',
     '30': 'Resumo Mensal',
+    '180': 'Resumo Semestral',
+    '365': 'Resumo Anual',
+    'all': 'Resumo Histórico',
   };
   const currentRangeLabel = rangeLabels[range];
 
@@ -274,6 +329,9 @@ ${services
                 <SelectItem value="7">Esta Semana</SelectItem>
                 <SelectItem value="15">Esta Quinzena</SelectItem>
                 <SelectItem value="30">Este Mês</SelectItem>
+                <SelectItem value="180">Este Semestre</SelectItem>
+                <SelectItem value="365">Este Ano</SelectItem>
+                <SelectItem value="all">Histórico</SelectItem>
               </SelectContent>
             </Select>
             <Button variant="ghost" size="icon" onClick={handleShare} disabled={services.length === 0}>
@@ -360,8 +418,3 @@ ${services
     </div>
   );
 }
-
-    
-    
-
-    
