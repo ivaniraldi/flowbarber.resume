@@ -320,7 +320,7 @@ ${services
             <h2 className="text-2xl font-bold tracking-tight">Painel de Análises</h2>
             <p className="text-muted-foreground">{dateRangeLabel}</p>
           </div>
-          <div className="flex w-full sm:w-auto items-center gap-2">
+          <div className="flex flex-col sm:flex-row w-full sm:w-auto items-center gap-2">
             <Select onValueChange={(value: RangeKey) => setRange(value)} defaultValue={range}>
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Selecione o período" />
@@ -334,12 +334,14 @@ ${services
                 <SelectItem value="all">Histórico</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="ghost" size="icon" onClick={handleShare} disabled={services.length === 0}>
-                <WhatsAppIcon className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={handleSharePdf} disabled={services.length === 0}>
-                <FileText className="h-5 w-5" />
-            </Button>
+            <div className='flex gap-2'>
+              <Button variant="ghost" size="icon" onClick={handleShare} disabled={services.length === 0}>
+                  <WhatsAppIcon className="h-5 w-5" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={handleSharePdf} disabled={services.length === 0}>
+                  <FileText className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
 

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
@@ -201,7 +202,7 @@ ${services
   return (
     <>
       <div id="print-area">
-        <div className="min-h-screen text-foreground">
+        <div className="min-h-screen text-foreground pb-24">
           <Header title="FlowBarber" showAnalyticsButton>
             <div className="flex items-center gap-2 no-print">
               <Button variant="ghost" size="icon" onClick={handleShare} disabled={services.length === 0}>
@@ -253,10 +254,10 @@ ${services
               </Alert>
             )}
           </main>
-          <div className="fixed bottom-6 right-6 no-print">
+          <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 no-print">
             <Button
               size="icon"
-              className="h-16 w-16 rounded-full bg-primary hover:bg-primary/90 shadow-lg"
+              className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-primary hover:bg-primary/90 shadow-lg"
               onClick={handleAddClick}
             >
               <Plus className="h-8 w-8" />
