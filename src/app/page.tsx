@@ -20,9 +20,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, RefreshCw, AlertTriangle, Printer, Scissors } from "lucide-react";
+import { Plus, RefreshCw, Scissors, FilePdf } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+
 
 export default function Home() {
   const {
@@ -97,9 +100,47 @@ ${services
     window.open(whatsappUrl, "_blank");
   }, [services, summary]);
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const handleSharePdf = useCallback(async () => {
+    const reportElement = document.getElementById('report-content');
+    if (!reportElement) return;
+
+    const canvas = await html2canvas(reportElement, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: null,
+    });
+    
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'pt',
+      format: [canvas.width, canvas.height]
+    });
+
+    pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+    const pdfBlob = pdf.blob;
+    
+    const date = new Date().toISOString().split('T')[0];
+    const fileName = `resumo-flowbarber-${date}.pdf`;
+    const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: `Resumo FlowBarber ${date}`,
+          text: 'Aqui está o resumo do dia.',
+        });
+        return;
+      } catch (error) {
+        console.error('Error sharing:', error);
+      }
+    }
+    
+    // Fallback to download
+    pdf.save(fileName);
+
+  }, [services]);
 
   if (!isLoaded) {
     return (
@@ -126,7 +167,7 @@ ${services
   return (
     <>
       <div id="print-area">
-        <div className="print-only p-8">
+        <div className="print-only p-8 fixed -left-[9999px] top-0 bg-background" id="report-content">
             <h1 className="text-3xl font-headline text-center mb-2">FlowBarber</h1>
             <p className="text-center text-muted-foreground mb-6">{new Date().toLocaleString('pt-BR')}</p>
             <Summary summary={summary} />
@@ -137,7 +178,7 @@ ${services
                 <div key={service.id} className={`flex justify-between items-center p-4 ${index < services.length - 1 ? 'border-b' : ''}`}>
                   <div>
                     <p className="font-bold">{service.name}</p>
-                    <p className="text-sm text-muted-foreground">{service.paymentMethod}</p>
+                    <p className="text-sm text-muted-foreground capitalize">{service.paymentMethod}</p>
                   </div>
                   <p className="font-bold">R$ {service.price.toFixed(2)}</p>
                 </div>
@@ -152,8 +193,8 @@ ${services
               <Button variant="ghost" size="icon" onClick={handleShare} disabled={services.length === 0}>
                 <WhatsAppIcon className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={handlePrint} disabled={services.length === 0}>
-                <Printer className="h-5 w-5" />
+              <Button variant="ghost" size="icon" onClick={handleSharePdf} disabled={services.length === 0}>
+                <FilePdf className="h-5 w-5" />
               </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>

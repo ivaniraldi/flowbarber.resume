@@ -74,33 +74,3 @@
     @apply bg-background text-foreground;
   }
 }
-
-@layer utilities {
-  .print-only {
-    display: none;
-  }
-}
-
-@media print {
-  body {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-  .no-print {
-    display: none !important;
-  }
-  .print-only {
-    display: block !important;
-  }
-  main {
-    padding: 0 !important;
-  }
-  .print-card {
-    border: 1px solid #333 !important;
-    box-shadow: none !important;
-    break-inside: avoid;
-  }
-  .print-bg-card {
-     background-color: hsl(var(--card)) !important;
-  }
-}
