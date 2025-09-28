@@ -44,14 +44,14 @@ export default function Home() {
     return services.reduce(
       (acc, service) => {
         acc.total += service.price;
-        if (service.paymentMethod === "efectivo") {
-          acc.efectivo += service.price;
+        if (service.paymentMethod === "dinheiro") {
+          acc.dinheiro += service.price;
         } else {
           acc.online += service.price;
         }
         return acc;
       },
-      { total: 0, efectivo: 0, online: 0 }
+      { total: 0, dinheiro: 0, online: 0 }
     );
   }, [services]);
 
@@ -82,7 +82,7 @@ export default function Home() {
 *Total Geral: R$${summary.total.toFixed(2).replace(".", ",")}*
 -----------------------------------
 *Detalhes:*
-- Efetivo: R$${summary.efectivo.toFixed(2).replace(".", ",")}
+- Dinheiro: R$${summary.dinheiro.toFixed(2).replace(".", ",")}
 - Pagamento Online: R$${summary.online.toFixed(2).replace(".", ",")}
 
 *Serviços Realizados: ${services.length}*
@@ -120,7 +120,7 @@ ${services
     pdf.setFontSize(12);
     pdf.setFont('helvetica', 'normal');
     pdf.text(`Total Geral: R$ ${summary.total.toFixed(2).replace('.', ',')}`, 14, 60);
-    pdf.text(`Efectivo: R$ ${summary.efectivo.toFixed(2).replace('.', ',')}`, 14, 70);
+    pdf.text(`Dinheiro: R$ ${summary.dinheiro.toFixed(2).replace('.', ',')}`, 14, 70);
     pdf.text(`Pagamento Online: R$ ${summary.online.toFixed(2).replace('.', ',')}`, 14, 80);
 
     // Services List

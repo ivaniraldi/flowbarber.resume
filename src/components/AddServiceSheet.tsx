@@ -42,7 +42,7 @@ interface AddServiceSheetProps {
 const serviceSchema = z.object({
   name: z.string().min(1, "O nome é obrigatório"),
   price: z.coerce.number().min(0.01, "O preço deve ser maior que zero"),
-  paymentMethod: z.enum(["efectivo", "pagamento online"], {
+  paymentMethod: z.enum(["dinheiro", "pagamento online"], {
     required_error: "Selecione um método de pagamento",
   }),
 });
@@ -60,7 +60,7 @@ export function AddServiceSheet({
     defaultValues: {
       name: "",
       price: 0,
-      paymentMethod: "efectivo",
+      paymentMethod: "dinheiro",
     },
   });
 
@@ -86,7 +86,7 @@ export function AddServiceSheet({
           form.reset({
             name: "",
             price: 0,
-            paymentMethod: "efectivo",
+            paymentMethod: "dinheiro",
           });
           setSelectedServices([]);
         }
@@ -236,12 +236,12 @@ export function AddServiceSheet({
                           className="grid grid-cols-2 gap-4"
                         >
                           <FormItem>
-                             <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", field.value === 'efectivo' && "border-primary")}>
+                             <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", field.value === 'dinheiro' && "border-primary")}>
                               <FormControl>
-                                  <RadioGroupItem value="efectivo" className="sr-only" />
+                                  <RadioGroupItem value="dinheiro" className="sr-only" />
                               </FormControl>
                               <Banknote className="mb-3 h-6 w-6" />
-                              Efectivo
+                              Dinheiro
                              </Label>
                           </FormItem>
                           <FormItem>

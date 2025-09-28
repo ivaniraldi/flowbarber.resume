@@ -1,4 +1,4 @@
-export type PaymentMethod = 'efectivo' | 'pagamento online';
+export type PaymentMethod = 'dinheiro' | 'pagamento online';
 
 export type Service = {
   id: string;

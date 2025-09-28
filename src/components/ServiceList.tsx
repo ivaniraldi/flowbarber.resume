@@ -40,7 +40,7 @@ export function ServiceList({ services, onEdit, onDelete }: ServiceListProps) {
         >
           <div className="flex items-center gap-4">
             <div className="p-2 bg-muted rounded-full">
-              {service.paymentMethod === 'efectivo' ? 
+              {service.paymentMethod === 'dinheiro' ? 
                 <Banknote className="h-5 w-5 text-green-400" /> : 
                 <CreditCard className="h-5 w-5 text-blue-400" />
               }

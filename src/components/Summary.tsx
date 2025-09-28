@@ -6,7 +6,7 @@ import { Banknote, CreditCard, Wallet } from "lucide-react";
 interface SummaryProps {
   summary: {
     total: number;
-    efectivo: number;
+    dinheiro: number;
     online: number;
   };
 }
@@ -29,12 +29,12 @@ export function Summary({ summary }: SummaryProps) {
       </Card>
       <Card className="print-card print-bg-card">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Efectivo</CardTitle>
+          <CardTitle className="text-sm font-medium">Dinheiro</CardTitle>
           <Banknote className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-green-400">
-            {formatCurrency(summary.efectivo)}
+            {formatCurrency(summary.dinheiro)}
           </div>
         </CardContent>
       </Card>
