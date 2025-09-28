@@ -97,10 +97,12 @@ export default function AnalyticsPage() {
     }
 
     services.forEach((service) => {
-      const day = format(parseISO(service.date), 'yyyy-MM-dd');
-      if (dataByDay[day]) {
-        dataByDay[day].total += service.price;
-        dataByDay[day].count += 1;
+      if (service.date) {
+        const day = format(parseISO(service.date), 'yyyy-MM-dd');
+        if (dataByDay[day]) {
+            dataByDay[day].total += service.price;
+            dataByDay[day].count += 1;
+        }
       }
     });
 
@@ -110,13 +112,20 @@ export default function AnalyticsPage() {
       serviços: values.count,
     })).sort((a, b) => a.date.localeCompare(b.date));
   }, [services, startDate, endDate]);
-
+  
   const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace('.', ',')}`;
   const dateRangeLabel = `${format(startDate, 'd MMM', { locale: ptBR })} - ${format(endDate, 'd MMM, yyyy', { locale: ptBR })}`;
 
+  const rangeLabels = {
+    '7': 'Resumo Semanal',
+    '15': 'Resumo Quinzenal',
+    '30': 'Resumo Mensal',
+  };
+  const currentRangeLabel = rangeLabels[range];
+
   const handleShare = useCallback(() => {
     const reportText = `
-*Resumo do Período - ${dateRangeLabel}*
+*${currentRangeLabel} - ${dateRangeLabel}*
 
 *Total Geral: R$${summary.total.toFixed(2).replace(".", ",")}*
 -----------------------------------
@@ -136,7 +145,7 @@ ${services
       reportText
     )}`;
     window.open(whatsappUrl, "_blank");
-  }, [services, summary, dateRangeLabel]);
+  }, [services, summary, dateRangeLabel, currentRangeLabel]);
 
   const handleSharePdf = useCallback(async () => {
     const pdf = new jsPDF();
@@ -145,27 +154,31 @@ ${services
     pdf.setFontSize(22);
     pdf.setFont('helvetica', 'bold');
     pdf.text("FlowBarber", 105, 20, { align: 'center' });
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(currentRangeLabel, 105, 30, { align: 'center' });
     pdf.setFontSize(12);
     pdf.setFont('helvetica', 'normal');
-    pdf.text(`Resumo do Período - ${dateRangeLabel}`, 105, 30, { align: 'center' });
+    pdf.text(dateRangeLabel, 105, 38, { align: 'center' });
+
 
     // Summary
     pdf.setFontSize(14);
     pdf.setFont('helvetica', 'bold');
-    pdf.text("Resumo Financeiro", 14, 50);
+    pdf.text("Resumo Financeiro", 14, 55);
     pdf.setFontSize(12);
     pdf.setFont('helvetica', 'normal');
-    pdf.text(`Receita Total: R$ ${summary.total.toFixed(2).replace('.', ',')}`, 14, 60);
-    pdf.text(`Dinheiro: R$ ${summary.dinheiro.toFixed(2).replace('.', ',')}`, 14, 70);
-    pdf.text(`Pagamento Online: R$ ${summary.online.toFixed(2).replace('.', ',')}`, 14, 80);
-    pdf.text(`Total de Serviços: ${summary.count}`, 14, 90);
+    pdf.text(`Receita Total: R$ ${summary.total.toFixed(2).replace('.', ',')}`, 14, 65);
+    pdf.text(`Dinheiro: R$ ${summary.dinheiro.toFixed(2).replace('.', ',')}`, 14, 75);
+    pdf.text(`Pagamento Online: R$ ${summary.online.toFixed(2).replace('.', ',')}`, 14, 85);
+    pdf.text(`Total de Serviços: ${summary.count}`, 14, 95);
 
     // Services List
     pdf.setFontSize(14);
     pdf.setFont('helvetica', 'bold');
-    pdf.text("Serviços Realizados", 14, 110);
+    pdf.text("Serviços Realizados", 14, 115);
     
-    let yPos = 120;
+    let yPos = 125;
     pdf.setFontSize(10);
     pdf.setFont('helvetica', 'bold');
     pdf.text("Data", 14, yPos);
@@ -203,8 +216,8 @@ ${services
       try {
         await navigator.share({
           files: [file],
-          title: `Resumo FlowBarber ${dateRangeLabel}`,
-          text: `Aqui está o resumo do período: ${dateRangeLabel}`,
+          title: `FlowBarber - ${currentRangeLabel}`,
+          text: `Aqui está o ${currentRangeLabel.toLowerCase()} do período: ${dateRangeLabel}`,
         });
         return;
       } catch (error) {
@@ -215,7 +228,7 @@ ${services
     // Fallback to download
     pdf.save(fileName);
 
-  }, [services, summary, dateRangeLabel]);
+  }, [services, summary, dateRangeLabel, currentRangeLabel]);
 
    if (!isLoaded) {
     return (
@@ -339,4 +352,5 @@ ${services
   );
 }
 
+    
     
