@@ -127,7 +127,7 @@ ${services
     <>
       <div id="print-area">
         <div className="print-only p-8">
-            <h1 className="text-3xl font-headline text-center mb-2">FlowReport</h1>
+            <h1 className="text-3xl font-headline text-center mb-2">FlowBarber</h1>
             <p className="text-center text-muted-foreground mb-6">{new Date().toLocaleString('pt-BR')}</p>
             <Summary summary={summary} />
             <div className="mt-6">
@@ -147,7 +147,7 @@ ${services
         </div>
 
         <div className="min-h-screen text-foreground">
-          <Header title="FlowReport">
+          <Header title="FlowBarber">
             <div className="flex items-center gap-2 no-print">
               <Button variant="ghost" size="icon" onClick={handleShare} disabled={services.length === 0}>
                 <WhatsAppIcon className="h-5 w-5" />

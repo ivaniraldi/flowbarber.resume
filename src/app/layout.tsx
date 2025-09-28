@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "FlowReport",
+  title: "FlowBarber",
   description: "Gerencie os serviços da sua barbearia Flow Barber.",
 };
 

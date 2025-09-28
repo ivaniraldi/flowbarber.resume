@@ -218,7 +218,7 @@ export function AddServiceSheet({
                 </Button>
               </SheetClose>
               <Button type="submit" className="w-full sm:w-auto">
-                {serviceToEdit ? "Salvar Alterações" : "Confirmar e Adicionar"}
+                {serviceToEdit ? "Salvar Alterações" : "Salvar Serviço"}
               </Button>
             </SheetFooter>
           </form>
