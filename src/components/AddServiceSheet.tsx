@@ -208,10 +208,6 @@ export function AddServiceSheet({
                     </FormItem>
                   )}
                 />
-                <Button type="submit" size="lg" className="w-full">
-                  <CheckCircle className="h-5 w-5 mr-2" />
-                  Confirmar e Adicionar
-                </Button>
               </div>
             </ScrollArea>
 
@@ -222,7 +218,7 @@ export function AddServiceSheet({
                 </Button>
               </SheetClose>
               <Button type="submit" className="w-full sm:w-auto">
-                {serviceToEdit ? "Salvar Alterações" : "Salvar Serviço"}
+                {serviceToEdit ? "Salvar Alterações" : "Confirmar e Adicionar"}
               </Button>
             </SheetFooter>
           </form>
