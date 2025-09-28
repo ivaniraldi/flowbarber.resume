@@ -111,23 +111,6 @@ export default function AnalyticsPage() {
     })).sort((a, b) => a.date.localeCompare(b.date));
   }, [services, startDate, endDate]);
 
-   if (!isLoaded) {
-    return (
-      <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8">
-        <Header title="FlowBarber" showAnalyticsButton/>
-        <main className="max-w-7xl mx-auto space-y-6 mt-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Skeleton className="h-28 w-full" />
-                <Skeleton className="h-28 w-full" />
-                <Skeleton className="h-28 w-full" />
-                <Skeleton className="h-28 w-full" />
-            </div>
-            <Skeleton className="h-96 w-full" />
-        </main>
-      </div>
-    );
-  }
-
   const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace('.', ',')}`;
   const dateRangeLabel = `${format(startDate, 'd MMM', { locale: ptBR })} - ${format(endDate, 'd MMM, yyyy', { locale: ptBR })}`;
 
@@ -233,6 +216,23 @@ ${services
     pdf.save(fileName);
 
   }, [services, summary, dateRangeLabel]);
+
+   if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8">
+        <Header title="FlowBarber" showAnalyticsButton/>
+        <main className="max-w-7xl mx-auto space-y-6 mt-6">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Skeleton className="h-28 w-full" />
+                <Skeleton className="h-28 w-full" />
+                <Skeleton className="h-28 w-full" />
+                <Skeleton className="h-28 w-full" />
+            </div>
+            <Skeleton className="h-96 w-full" />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen text-foreground">
