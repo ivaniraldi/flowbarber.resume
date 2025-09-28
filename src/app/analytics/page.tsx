@@ -1,6 +1,6 @@
 
 "use client";
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   Bar,
   BarChart,
@@ -32,8 +32,12 @@ import type { Service } from '@/lib/types';
 import { subDays, format, parseISO, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Header } from '@/components/Header';
-import { Banknote, CreditCard, Wallet, Scissors } from 'lucide-react';
+import { Banknote, CreditCard, Wallet, Scissors, FileText } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import WhatsAppIcon from '@/components/icons/WhatsAppIcon';
+import jsPDF from 'jspdf';
+
 
 type RangeKey = '7' | '15' | '30';
 
@@ -125,8 +129,110 @@ export default function AnalyticsPage() {
   }
 
   const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace('.', ',')}`;
-
   const dateRangeLabel = `${format(startDate, 'd MMM', { locale: ptBR })} - ${format(endDate, 'd MMM, yyyy', { locale: ptBR })}`;
+
+  const handleShare = useCallback(() => {
+    const reportText = `
+*Resumo do Período - ${dateRangeLabel}*
+
+*Total Geral: R$${summary.total.toFixed(2).replace(".", ",")}*
+-----------------------------------
+*Detalhes:*
+- Dinheiro: R$${summary.dinheiro.toFixed(2).replace(".", ",")}
+- Pagamento Online: R$${summary.online.toFixed(2).replace(".", ",")}
+
+*Serviços Realizados: ${summary.count}*
+${services
+  .map(
+    (s) => `- ${format(parseISO(s.date), 'dd/MM')}: ${s.name} - R$${s.price.toFixed(2).replace(".", ",")} (${s.paymentMethod})`
+  )
+  .join("\n")}
+    `.trim();
+
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(
+      reportText
+    )}`;
+    window.open(whatsappUrl, "_blank");
+  }, [services, summary, dateRangeLabel]);
+
+  const handleSharePdf = useCallback(async () => {
+    const pdf = new jsPDF();
+    
+    // Header
+    pdf.setFontSize(22);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text("FlowBarber", 105, 20, { align: 'center' });
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`Resumo do Período - ${dateRangeLabel}`, 105, 30, { align: 'center' });
+
+    // Summary
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text("Resumo Financeiro", 14, 50);
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`Receita Total: R$ ${summary.total.toFixed(2).replace('.', ',')}`, 14, 60);
+    pdf.text(`Dinheiro: R$ ${summary.dinheiro.toFixed(2).replace('.', ',')}`, 14, 70);
+    pdf.text(`Pagamento Online: R$ ${summary.online.toFixed(2).replace('.', ',')}`, 14, 80);
+    pdf.text(`Total de Serviços: ${summary.count}`, 14, 90);
+
+    // Services List
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text("Serviços Realizados", 14, 110);
+    
+    let yPos = 120;
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text("Data", 14, yPos);
+    pdf.text("Serviço", 40, yPos);
+    pdf.text("Método", 120, yPos);
+    pdf.text("Preço", 180, yPos, {align: 'right'});
+    pdf.line(14, yPos + 2, 196, yPos + 2); // horizontal line
+    yPos += 8;
+
+    pdf.setFont('helvetica', 'normal');
+    services.forEach(service => {
+        if (yPos > 280) { // Add new page if content overflows
+            pdf.addPage();
+            yPos = 20;
+        }
+        pdf.text(format(parseISO(service.date), 'dd/MM/yy'), 14, yPos);
+        pdf.text(service.name, 40, yPos, { maxWidth: 75 });
+        pdf.text(service.paymentMethod, 120, yPos);
+        pdf.text(`R$ ${service.price.toFixed(2).replace('.', ',')}`, 196, yPos, { align: 'right' });
+        yPos += 7;
+    });
+
+    const isMobile = window.innerWidth < 768;
+    const fileName = `resumo-flowbarber-${new Date().toISOString().split('T')[0]}.pdf`;
+
+    if (isMobile) {
+      pdf.save(fileName);
+      return;
+    }
+
+    const pdfBlob = pdf.blob;
+    const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: `Resumo FlowBarber ${dateRangeLabel}`,
+          text: `Aqui está o resumo do período: ${dateRangeLabel}`,
+        });
+        return;
+      } catch (error) {
+        console.error('Error sharing:', error);
+      }
+    }
+    
+    // Fallback to download
+    pdf.save(fileName);
+
+  }, [services, summary, dateRangeLabel]);
 
   return (
     <div className="min-h-screen text-foreground">
@@ -137,16 +243,24 @@ export default function AnalyticsPage() {
             <h2 className="text-2xl font-bold tracking-tight">Painel de Análises</h2>
             <p className="text-muted-foreground">{dateRangeLabel}</p>
           </div>
-          <Select onValueChange={(value: RangeKey) => setRange(value)} defaultValue={range}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Selecione o período" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7">Esta Semana</SelectItem>
-              <SelectItem value="15">Últimos 15 dias</SelectItem>
-              <SelectItem value="30">Este Mês</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex w-full sm:w-auto items-center gap-2">
+            <Select onValueChange={(value: RangeKey) => setRange(value)} defaultValue={range}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Selecione o período" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7">Esta Semana</SelectItem>
+                <SelectItem value="15">Últimos 15 dias</SelectItem>
+                <SelectItem value="30">Este Mês</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="ghost" size="icon" onClick={handleShare} disabled={services.length === 0}>
+                <WhatsAppIcon className="h-5 w-5" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={handleSharePdf} disabled={services.length === 0}>
+                <FileText className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -224,3 +338,5 @@ export default function AnalyticsPage() {
     </div>
   );
 }
+
+    
