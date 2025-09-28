@@ -28,7 +28,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Banknote, CreditCard, Scissors } from "lucide-react";
+import { Banknote, CreditCard, CheckCircle } from "lucide-react";
 
 interface AddServiceSheetProps {
   isOpen: boolean;
@@ -206,6 +206,10 @@ export function AddServiceSheet({
                   </FormItem>
                 )}
               />
+              <Button type="submit" size="lg" className="w-full">
+                <CheckCircle className="h-5 w-5 mr-2" />
+                Confirmar e Adicionar
+              </Button>
             </div>
 
             <SheetFooter className="mt-auto pt-4">
@@ -214,7 +218,9 @@ export function AddServiceSheet({
                   Cancelar
                 </Button>
               </SheetClose>
-              <Button type="submit">Salvar Serviço</Button>
+              <Button type="submit">
+                {serviceToEdit ? "Salvar Alterações" : "Salvar Serviço"}
+              </Button>
             </SheetFooter>
           </form>
         </Form>
