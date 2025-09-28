@@ -123,28 +123,26 @@ export default function AnalyticsPage() {
     const isLongRange = ['180', '365', 'all'].includes(range);
     
     if (isLongRange) {
-        const dataByMonth: { [key: string]: { total: number; count: number } } = {};
+        const dataByMonth: { [key: string]: { total: number; count: number; dateObj: Date } } = {};
         
         services.forEach((service) => {
             if (service.date) {
                 const month = format(parseISO(service.date), 'yyyy-MM');
                 if (!dataByMonth[month]) {
-                    dataByMonth[month] = { total: 0, count: 0 };
+                    dataByMonth[month] = { total: 0, count: 0, dateObj: startOfMonth(parseISO(service.date)) };
                 }
                 dataByMonth[month].total += service.price;
                 dataByMonth[month].count += 1;
             }
         });
 
-        return Object.entries(dataByMonth).map(([date, values]) => ({
-            date: format(parseISO(`${date}-01`), 'MMM/yy', { locale: ptBR }),
-            total: values.total,
-            serviços: values.count,
-        })).sort((a, b) => {
-            const dateA = new Date(a.date.split('/')[1], ptBR.localize?.month(ptBR.monthStarts.indexOf(a.date.split('/')[0].replace('.', ''))) as number);
-            const dateB = new Date(b.date.split('/')[1], ptBR.localize?.month(ptBR.monthStarts.indexOf(b.date.split('/')[0].replace('.', ''))) as number);
-            return dateA.getTime() - dateB.getTime();
-        });
+        return Object.values(dataByMonth)
+          .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
+          .map(values => ({
+              date: format(values.dateObj, 'MMM/yy', { locale: ptBR }),
+              total: values.total,
+              serviços: values.count,
+          }));
 
     } else {
         const dataByDay: { [key: string]: { total: number; count: number } } = {};
