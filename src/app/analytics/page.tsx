@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/select';
 import { useServices } from '@/hooks/use-services';
 import type { Service } from '@/lib/types';
-import { subDays, format, parseISO, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks } from 'date-fns';
+import { subDays, format, parseISO, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, getDate, setDate } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Header } from '@/components/Header';
 import { Banknote, CreditCard, Wallet, Scissors, FileText } from 'lucide-react';
@@ -48,11 +48,18 @@ export default function AnalyticsPage() {
   const { services, startDate, endDate } = useMemo(() => {
     const now = new Date();
     let start: Date;
-    let end: Date = now;
+    let end: Date;
 
     switch (range) {
       case '15':
-        start = subDays(now, 14);
+        const dayOfMonth = getDate(now);
+        if (dayOfMonth <= 15) {
+          start = startOfMonth(now);
+          end = setDate(start, 15);
+        } else {
+          start = setDate(startOfMonth(now), 16);
+          end = endOfMonth(now);
+        }
         break;
       case '30':
         start = startOfMonth(now);
@@ -90,8 +97,10 @@ export default function AnalyticsPage() {
 
   const chartData = useMemo(() => {
     const dataByDay: { [key: string]: { total: number; count: number } } = {};
+    const loopStartDate = new Date(startDate);
+    const loopEndDate = new Date(endDate) > new Date() ? new Date() : new Date(endDate);
 
-    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+    for (let d = loopStartDate; d <= loopEndDate; d.setDate(d.getDate() + 1)) {
         const key = format(d, 'yyyy-MM-dd');
         dataByDay[key] = { total: 0, count: 0 };
     }
@@ -116,9 +125,9 @@ export default function AnalyticsPage() {
   const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace('.', ',')}`;
   const dateRangeLabel = `${format(startDate, 'd MMM', { locale: ptBR })} - ${format(endDate, 'd MMM, yyyy', { locale: ptBR })}`;
 
-  const rangeLabels = {
+  const rangeLabels: { [key in RangeKey]: string } = {
     '7': 'Resumo Semanal',
-    '15': 'Resumo Quinzenal',
+    '15': 'Resumo Quincenal',
     '30': 'Resumo Mensal',
   };
   const currentRangeLabel = rangeLabels[range];
@@ -263,7 +272,7 @@ ${services
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="7">Esta Semana</SelectItem>
-                <SelectItem value="15">Últimos 15 dias</SelectItem>
+                <SelectItem value="15">Esta Quinzena</SelectItem>
                 <SelectItem value="30">Este Mês</SelectItem>
               </SelectContent>
             </Select>
@@ -353,4 +362,6 @@ ${services
 }
 
     
+    
+
     
