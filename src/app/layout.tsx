@@ -5,7 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "FlowBarber",
   description: "Gerencie os serviços da sua barbearia Flow Barber.",
-};
+}; 
 
 export default function RootLayout({
   children,
