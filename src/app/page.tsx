@@ -69,11 +69,11 @@ export default function Home() {
     setIsSheetOpen(true);
   };
 
-  const handleSaveService = (service: Omit<Service, 'id' | 'date'>) => {
+  const handleSaveService = (serviceData: Omit<Service, 'id'>) => {
     if (serviceToEdit) {
-      updateService(serviceToEdit.id, service);
+      updateService(serviceToEdit.id, serviceData);
     } else {
-      addService(service);
+      addService(serviceData);
     }
     setIsSheetOpen(false);
   };

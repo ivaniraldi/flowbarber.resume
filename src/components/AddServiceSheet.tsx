@@ -28,14 +28,18 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Banknote, CreditCard } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Banknote, CreditCard, CalendarIcon } from "lucide-react";
 import { ScrollArea } from "./ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface AddServiceSheetProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSave: (service: Omit<Service, 'id' | 'date'>) => void;
+  onSave: (service: Omit<Service, 'id'>) => void;
   serviceToEdit?: Service;
 }
 
@@ -44,6 +48,9 @@ const serviceSchema = z.object({
   price: z.coerce.number().min(0.01, "O preço deve ser maior que zero"),
   paymentMethod: z.enum(["dinheiro", "pagamento online"], {
     required_error: "Selecione um método de pagamento",
+  }),
+  date: z.date({
+    required_error: "Selecione uma data.",
   }),
 });
 
@@ -61,6 +68,7 @@ export function AddServiceSheet({
       name: "",
       price: 0,
       paymentMethod: "dinheiro",
+      date: new Date(),
     },
   });
 
@@ -71,6 +79,7 @@ export function AddServiceSheet({
             name: serviceToEdit.name,
             price: serviceToEdit.price,
             paymentMethod: serviceToEdit.paymentMethod,
+            date: new Date(serviceToEdit.date),
           });
           setSelectedServices([]);
         } else {
@@ -80,6 +89,7 @@ export function AddServiceSheet({
             name: newName,
             price: newPrice,
             paymentMethod: "dinheiro",
+            date: new Date(),
           });
         }
     }
@@ -96,7 +106,11 @@ export function AddServiceSheet({
 
   const onSubmit = (data: z.infer<typeof serviceSchema>) => {
     if (data.name && data.price > 0) {
-        onSave(data);
+        const serviceData = {
+          ...data,
+          date: data.date.toISOString(),
+        }
+        onSave(serviceData);
     }
   };
   
@@ -196,6 +210,48 @@ export function AddServiceSheet({
                   </TabsContent>
                 </Tabs>
                 
+                <FormField
+                      control={form.control}
+                      name="date"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Data do Serviço</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant={"outline"}
+                                  className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {field.value ? (
+                                    format(field.value, "PPP", { locale: ptBR})
+                                  ) : (
+                                    <span>Escolha uma data</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                disabled={(date) =>
+                                  date > new Date() || date < new Date("1900-01-01")
+                                }
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
                 <FormField
                   control={form.control}
                   name="price"

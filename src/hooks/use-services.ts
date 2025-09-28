@@ -43,19 +43,19 @@ export function useServices() {
     }
   }, [services, isLoaded, toast]);
 
-  const addService = useCallback((service: Omit<Service, 'id' | 'date'>) => {
+  const addService = useCallback((serviceData: Omit<Service, 'id'>) => {
     const newService: Service = {
         id: new Date().toISOString() + Math.random(),
-        date: new Date().toISOString(),
-        ...service,
+        ...serviceData,
     }
-    setServices((prevServices) => [newService, ...prevServices]);
-    toast({ title: "Serviço adicionado", description: `"${service.name}" foi adicionado à lista.` });
+    setServices((prevServices) => [newService, ...prevServices].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    toast({ title: "Serviço adicionado", description: `"${serviceData.name}" foi adicionado à lista.` });
   }, [toast]);
 
-  const updateService = useCallback((id: string, updatedServiceData: Omit<Service, 'id' | 'date'>) => {
+  const updateService = useCallback((id: string, updatedServiceData: Omit<Service, 'id'>) => {
     setServices((prevServices) =>
-      prevServices.map((service) => (service.id === id ? { ...service, ...updatedServiceData } : service))
+      prevServices.map((service) => (service.id === id ? { id, ...updatedServiceData } : service))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     );
      toast({ title: "Serviço atualizado", description: `"${updatedServiceData.name}" foi atualizado.` });
   }, [toast]);
