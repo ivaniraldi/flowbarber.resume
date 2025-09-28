@@ -24,7 +24,6 @@ import { Plus, RefreshCw, Scissors, FileText } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 
 
 export default function Home() {
@@ -101,34 +100,65 @@ ${services
   }, [services, summary]);
 
   const handleSharePdf = useCallback(async () => {
-    const reportElement = document.getElementById('report-content');
-    if (!reportElement) return;
+    const pdf = new jsPDF();
+    const date = new Date();
+    const formattedDate = date.toLocaleDateString('pt-BR');
+    const formattedTime = date.toLocaleTimeString('pt-BR');
 
-    const canvas = await html2canvas(reportElement, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: null,
-    });
+    // Header
+    pdf.setFontSize(22);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text("FlowBarber", 105, 20, { align: 'center' });
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`Resumo do Dia - ${formattedDate} ${formattedTime}`, 105, 30, { align: 'center' });
+
+    // Summary
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text("Resumo Financeiro", 14, 50);
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`Total Geral: R$ ${summary.total.toFixed(2).replace('.', ',')}`, 14, 60);
+    pdf.text(`Efectivo: R$ ${summary.efectivo.toFixed(2).replace('.', ',')}`, 14, 70);
+    pdf.text(`Pagamento Online: R$ ${summary.online.toFixed(2).replace('.', ',')}`, 14, 80);
+
+    // Services List
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text("Serviços Realizados", 14, 100);
     
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'pt',
-      format: [canvas.width, canvas.height]
+    let yPos = 110;
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text("Serviço", 14, yPos);
+    pdf.text("Método", 120, yPos);
+    pdf.text("Preço", 180, yPos, {align: 'right'});
+    pdf.line(14, yPos + 2, 196, yPos + 2); // horizontal line
+    yPos += 8;
+
+    pdf.setFont('helvetica', 'normal');
+    services.forEach(service => {
+        if (yPos > 280) { // Add new page if content overflows
+            pdf.addPage();
+            yPos = 20;
+        }
+        pdf.text(service.name, 14, yPos, { maxWidth: 100 });
+        pdf.text(service.paymentMethod, 120, yPos);
+        pdf.text(`R$ ${service.price.toFixed(2).replace('.', ',')}`, 196, yPos, { align: 'right' });
+        yPos += 7;
     });
 
-    pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
     const pdfBlob = pdf.blob;
     
-    const date = new Date().toISOString().split('T')[0];
-    const fileName = `resumo-flowbarber-${date}.pdf`;
+    const fileName = `resumo-flowbarber-${date.toISOString().split('T')[0]}.pdf`;
     const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({
           files: [file],
-          title: `Resumo FlowBarber ${date}`,
+          title: `Resumo FlowBarber ${formattedDate}`,
           text: 'Aqui está o resumo do dia.',
         });
         return;
@@ -140,7 +170,7 @@ ${services
     // Fallback to download
     pdf.save(fileName);
 
-  }, [services]);
+  }, [services, summary]);
 
   if (!isLoaded) {
     return (
@@ -167,26 +197,6 @@ ${services
   return (
     <>
       <div id="print-area">
-        <div className="print-only p-8 fixed -left-[9999px] top-0 bg-background" id="report-content">
-            <h1 className="text-3xl font-headline text-center mb-2">FlowBarber</h1>
-            <p className="text-center text-muted-foreground mb-6">{new Date().toLocaleString('pt-BR')}</p>
-            <Summary summary={summary} />
-            <div className="mt-6">
-              <h2 className="text-xl font-headline mb-4">Serviços</h2>
-              <div className="border rounded-lg print-bg-card">
-              {services.map((service, index) => (
-                <div key={service.id} className={`flex justify-between items-center p-4 ${index < services.length - 1 ? 'border-b' : ''}`}>
-                  <div>
-                    <p className="font-bold">{service.name}</p>
-                    <p className="text-sm text-muted-foreground capitalize">{service.paymentMethod}</p>
-                  </div>
-                  <p className="font-bold">R$ {service.price.toFixed(2)}</p>
-                </div>
-              ))}
-              </div>
-            </div>
-        </div>
-
         <div className="min-h-screen text-foreground">
           <Header title="FlowBarber">
             <div className="flex items-center gap-2 no-print">
