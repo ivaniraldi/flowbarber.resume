@@ -5,6 +5,7 @@ export type Service = {
   name: string;
   price: number;
   paymentMethod: PaymentMethod;
+  date: string;
 };
 
 export type PredefinedService = {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import type { Service } from "@/lib/types";
 import { useServices } from "@/hooks/use-services";
 import { AddServiceSheet } from "@/components/AddServiceSheet";
@@ -28,7 +28,7 @@ import jsPDF from "jspdf";
 
 export default function Home() {
   const {
-    services,
+    services: allServices,
     addService,
     updateService,
     deleteService,
@@ -39,6 +39,10 @@ export default function Home() {
   const [serviceToEdit, setServiceToEdit] = useState<Service | undefined>(
     undefined
   );
+
+  const services = useMemo(() => {
+    return allServices.filter(s => new Date(s.date).toDateString() === new Date().toDateString())
+  }, [allServices]);
 
   const summary = useMemo(() => {
     return services.reduce(
@@ -65,9 +69,9 @@ export default function Home() {
     setIsSheetOpen(true);
   };
 
-  const handleSaveService = (service: Service) => {
+  const handleSaveService = (service: Omit<Service, 'id' | 'date'>) => {
     if (serviceToEdit) {
-      updateService(service.id, service);
+      updateService(serviceToEdit.id, service);
     } else {
       addService(service);
     }
@@ -198,7 +202,7 @@ ${services
     <>
       <div id="print-area">
         <div className="min-h-screen text-foreground">
-          <Header title="FlowBarber">
+          <Header title="FlowBarber" showAnalyticsButton>
             <div className="flex items-center gap-2 no-print">
               <Button variant="ghost" size="icon" onClick={handleShare} disabled={services.length === 0}>
                 <WhatsAppIcon className="h-5 w-5" />
@@ -216,7 +220,7 @@ ${services
                   <AlertDialogHeader>
                     <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Esta ação não pode ser desfeita. Isso limpará permanentemente todos os serviços da sua lista.
+                      Esta ação não pode ser desfeita. Isso limpará permanentemente todos os serviços de hoje da sua lista.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

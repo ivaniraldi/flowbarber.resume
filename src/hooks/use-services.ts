@@ -43,16 +43,21 @@ export function useServices() {
     }
   }, [services, isLoaded, toast]);
 
-  const addService = useCallback((service: Service) => {
-    setServices((prevServices) => [service, ...prevServices]);
+  const addService = useCallback((service: Omit<Service, 'id' | 'date'>) => {
+    const newService: Service = {
+        id: new Date().toISOString() + Math.random(),
+        date: new Date().toISOString(),
+        ...service,
+    }
+    setServices((prevServices) => [newService, ...prevServices]);
     toast({ title: "Serviço adicionado", description: `"${service.name}" foi adicionado à lista.` });
   }, [toast]);
 
-  const updateService = useCallback((id: string, updatedService: Service) => {
+  const updateService = useCallback((id: string, updatedServiceData: Omit<Service, 'id' | 'date'>) => {
     setServices((prevServices) =>
-      prevServices.map((service) => (service.id === id ? updatedService : service))
+      prevServices.map((service) => (service.id === id ? { ...service, ...updatedServiceData } : service))
     );
-     toast({ title: "Serviço atualizado", description: `"${updatedService.name}" foi atualizado.` });
+     toast({ title: "Serviço atualizado", description: `"${updatedServiceData.name}" foi atualizado.` });
   }, [toast]);
 
   const deleteService = useCallback((id: string) => {
@@ -61,9 +66,10 @@ export function useServices() {
   }, [toast]);
 
   const clearServices = useCallback(() => {
-    setServices([]);
-    toast({ title: "Lista limpa", description: "Todos os serviços foram removidos.", variant: "destructive"});
-  }, [toast]);
+    const todayServices = services.filter(s => new Date(s.date).toDateString() !== new Date().toDateString());
+    setServices(todayServices);
+    toast({ title: "Lista limpa", description: "Os serviços de hoje foram removidos.", variant: "destructive"});
+  }, [toast, services]);
 
   return { services, addService, updateService, deleteService, clearServices, isLoaded };
 }

@@ -28,14 +28,14 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Banknote, CreditCard, CheckCircle } from "lucide-react";
+import { Banknote, CreditCard } from "lucide-react";
 import { ScrollArea } from "./ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 interface AddServiceSheetProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSave: (service: Service) => void;
+  onSave: (service: Omit<Service, 'id' | 'date'>) => void;
   serviceToEdit?: Service;
 }
 
@@ -64,16 +64,7 @@ export function AddServiceSheet({
     },
   });
 
-  useEffect(() => {
-    if (!serviceToEdit) {
-      const newName = selectedServices.map(s => s.name).join(', ');
-      const newPrice = selectedServices.reduce((acc, s) => acc + s.price, 0);
-      form.setValue('name', newName);
-      form.setValue('price', newPrice);
-    }
-  }, [selectedServices, serviceToEdit, form]);
-
-  useEffect(() => {
+   useEffect(() => {
     if (isOpen) {
         if (serviceToEdit) {
           form.reset({
@@ -83,23 +74,29 @@ export function AddServiceSheet({
           });
           setSelectedServices([]);
         } else {
+          const newName = selectedServices.map(s => s.name).join(', ');
+          const newPrice = selectedServices.reduce((acc, s) => acc + s.price, 0);
           form.reset({
-            name: "",
-            price: 0,
+            name: newName,
+            price: newPrice,
             paymentMethod: "dinheiro",
           });
-          setSelectedServices([]);
         }
     }
-  }, [serviceToEdit, isOpen, form]);
+  }, [serviceToEdit, isOpen, form, selectedServices]);
+
+  useEffect(() => {
+    if (!serviceToEdit) {
+      const newName = selectedServices.map(s => s.name).join(', ');
+      const newPrice = selectedServices.reduce((acc, s) => acc + s.price, 0);
+      form.setValue('name', newName);
+      form.setValue('price', newPrice);
+    }
+  }, [selectedServices, serviceToEdit, form]);
 
   const onSubmit = (data: z.infer<typeof serviceSchema>) => {
     if (data.name && data.price > 0) {
-        const service: Service = {
-          id: serviceToEdit?.id || new Date().toISOString(),
-          ...data,
-        };
-        onSave(service);
+        onSave(data);
     }
   };
   
@@ -278,5 +275,3 @@ export function AddServiceSheet({
     </Sheet>
   );
 }
-
-    
