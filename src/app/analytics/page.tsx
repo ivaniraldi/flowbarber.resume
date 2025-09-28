@@ -62,7 +62,7 @@ export default function AnalyticsPage() {
     }
     
     const filtered = allServices.filter((service) =>
-      isWithinInterval(parseISO(service.date), { start, end })
+      service.date && isWithinInterval(parseISO(service.date), { start, end })
     );
 
     return { services: filtered, startDate: start, endDate: end };
