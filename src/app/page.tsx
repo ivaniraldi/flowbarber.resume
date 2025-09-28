@@ -205,12 +205,6 @@ ${services
         <div className="min-h-screen text-foreground pb-24">
           <Header title="FlowBarber" showAnalyticsButton>
             <div className="flex items-center gap-2 no-print">
-              <Button variant="ghost" size="icon" onClick={handleShare} disabled={services.length === 0}>
-                <WhatsAppIcon className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={handleSharePdf} disabled={services.length === 0}>
-                <FileText className="h-5 w-5" />
-              </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" size="icon" disabled={services.length === 0}>
@@ -236,6 +230,16 @@ ${services
           </Header>
           <main className="p-4 md:p-6 lg:p-8 space-y-6 max-w-4xl mx-auto">
             <p className="text-muted-foreground text-center capitalize">{today}</p>
+            <div className="flex justify-center gap-2 no-print">
+              <Button variant="outline" size="sm" onClick={handleShare} disabled={services.length === 0}>
+                <WhatsAppIcon className="h-4 w-4" />
+                <span className="ml-2">Enviar Resumo</span>
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleSharePdf} disabled={services.length === 0}>
+                <FileText className="h-4 w-4" />
+                <span className="ml-2">Baixar PDF</span>
+              </Button>
+            </div>
             <Summary summary={summary} />
 
             {services.length > 0 ? (
@@ -275,3 +279,5 @@ ${services
     </>
   );
 }
+
+    
