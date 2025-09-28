@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -72,35 +73,40 @@ export function AddServiceSheet({
     },
   });
 
-   useEffect(() => {
-    if (isOpen) {
-        if (serviceToEdit) {
-          form.reset({
-            name: serviceToEdit.name,
-            price: serviceToEdit.price,
-            paymentMethod: serviceToEdit.paymentMethod,
-            date: new Date(serviceToEdit.date),
-          });
-          setSelectedServices([]);
-        } else {
-          const newName = selectedServices.map(s => s.name).join(', ');
-          const newPrice = selectedServices.reduce((acc, s) => acc + s.price, 0);
-          form.reset({
-            name: newName,
-            price: newPrice,
-            paymentMethod: "dinheiro",
-            date: new Date(),
-          });
-        }
+  // Effect to reset form when opening to create a new service
+  useEffect(() => {
+    if (isOpen && !serviceToEdit) {
+      const newName = selectedServices.map(s => s.name).join(', ');
+      const newPrice = selectedServices.reduce((acc, s) => acc + s.price, 0);
+      form.reset({
+        name: newName,
+        price: newPrice,
+        paymentMethod: form.getValues('paymentMethod') || 'dinheiro',
+        date: form.getValues('date') || new Date(),
+      });
     }
-  }, [serviceToEdit, isOpen, form, selectedServices]);
+  }, [selectedServices, isOpen, !serviceToEdit, form]);
 
+  // Effect to populate form when opening to edit an existing service
+  useEffect(() => {
+    if (isOpen && serviceToEdit) {
+      form.reset({
+        name: serviceToEdit.name,
+        price: serviceToEdit.price,
+        paymentMethod: serviceToEdit.paymentMethod,
+        date: new Date(serviceToEdit.date),
+      });
+      setSelectedServices([]);
+    }
+  }, [serviceToEdit, isOpen, form]);
+
+  // Effect to update name and price when predefined services are selected/deselected
   useEffect(() => {
     if (!serviceToEdit) {
       const newName = selectedServices.map(s => s.name).join(', ');
       const newPrice = selectedServices.reduce((acc, s) => acc + s.price, 0);
-      form.setValue('name', newName);
-      form.setValue('price', newPrice);
+      form.setValue('name', newName, { shouldValidate: true });
+      form.setValue('price', newPrice, { shouldValidate: true });
     }
   }, [selectedServices, serviceToEdit, form]);
 
@@ -112,6 +118,8 @@ export function AddServiceSheet({
         }
         onSave(serviceData);
     }
+    // Reset selections after saving
+    setSelectedServices([]);
   };
   
   const handlePredefinedClick = (service: PredefinedService) => {
@@ -146,7 +154,7 @@ export function AddServiceSheet({
         </SheetHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex-grow flex flex-col overflow-hidden">
+          <form onSubmit={form.handleSubmit(onSubmit, (errors) => console.log(errors))} className="flex-grow flex flex-col overflow-hidden">
             <ScrollArea className="flex-grow pr-6 -mr-6">
               <div className="space-y-6 py-4">
                 <Tabs defaultValue="predefined">
@@ -196,9 +204,9 @@ export function AddServiceSheet({
                         <FormItem>
                           <FormLabel>Preço (R$)</FormLabel>
                           <FormControl>
-                            <Input type="number" placeholder="25.00" {...field}
+                            <Input type="number" step="any" placeholder="25.00" {...field}
                             onChange={(e) => {
-                                field.onChange(e);
+                                field.onChange(e.target.valueAsNumber);
                                 setSelectedServices([]);
                             }}
                             />
@@ -262,11 +270,10 @@ export function AddServiceSheet({
                                 <span className="text-2xl font-bold">R$</span>
                                 <FormControl>
                                     <Input 
-                                      type="number"
+                                      type="text"
                                       readOnly 
                                       className="text-2xl font-bold border-0 bg-transparent shadow-none px-1 h-auto focus-visible:ring-0" 
-                                      {...field} 
-                                      value={field.value || '0.00'}
+                                      value={Number(field.value).toFixed(2) || '0.00'}
                                     />
                                 </FormControl>
                            </div>
@@ -317,7 +324,7 @@ export function AddServiceSheet({
 
             <SheetFooter className="mt-auto pt-4 border-t">
               <SheetClose asChild>
-                <Button type="button" variant="outline" className="w-full sm:w-auto">
+                <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => setSelectedServices([])}>
                   Cancelar
                 </Button>
               </SheetClose>
@@ -331,3 +338,5 @@ export function AddServiceSheet({
     </Sheet>
   );
 }
+
+    
