@@ -22,9 +22,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { AddPlanSheet } from "@/components/AddPlanSheet";
 import { Progress } from "@/components/ui/progress";
+import { useServices } from "@/hooks/use-services";
 
 export default function PlansPage() {
-  const { plans, addPlan, updatePlan, deletePlan, useCut, resetCuts, isLoaded } = useClientPlans();
+  const { addService } = useServices();
+  const { plans, addPlan, updatePlan, deletePlan, useCut, resetCuts, isLoaded } = useClientPlans({ addService });
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [planToEdit, setPlanToEdit] = useState<ClientPlan | undefined>(undefined);
 
@@ -38,11 +40,11 @@ export default function PlansPage() {
     setIsSheetOpen(true);
   };
 
-  const handleSavePlan = (planData: Omit<ClientPlan, 'id' | 'remainingCuts'>) => {
+  const handleSavePlan = (planData: Omit<ClientPlan, 'id' | 'remainingCuts'>, addToRevenue: boolean) => {
     if (planToEdit) {
       updatePlan(planToEdit.id, { ...planToEdit, ...planData });
     } else {
-      addPlan(planData);
+      addPlan(planData, addToRevenue);
     }
     setIsSheetOpen(false);
   };
@@ -126,7 +128,7 @@ export default function PlansPage() {
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button disabled={plan.remainingCuts > 0}>
+                        <Button disabled={plan.remainingCuts > 0 && plan.remainingCuts < plan.totalCuts}>
                             <RefreshCw className="h-4 w-4 mr-2"/>
                             Renovar
                         </Button>
@@ -135,13 +137,13 @@ export default function PlansPage() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Renovar plano?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Isso irá reiniciar a contagem de cortes para o plano de "{plan.name}" para {plan.totalCuts} cortes. 
-                            Confirme que o pagamento de R$ {plan.price.toFixed(2)} foi recebido.
+                            Isso irá reiniciar a contagem de cortes para o plano de "{plan.name}" para {plan.totalCuts} cortes.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => resetCuts(plan.id)}>Confirmar Renovação</AlertDialogAction>
+                          <AlertDialogAction onClick={() => resetCuts(plan.id, false)}>Renovar sem adicionar receita</AlertDialogAction>
+                           <AlertDialogAction onClick={() => resetCuts(plan.id, true)}>Confirmar Pagamento e Renovar</AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>

@@ -2,27 +2,32 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { ClientPlan } from "@/lib/types";
+import type { ClientPlan, Service } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 
 const STORAGE_KEY = "flow-report-client-plans";
 
-export function useClientPlans() {
+type UseClientPlansProps = {
+  addService: (serviceData: Omit<Service, 'id'>) => void;
+};
+
+export function useClientPlans({ addService }: UseClientPlansProps) {
   const [plans, setPlans] = useState<ClientPlan[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const { toast } = useToast();
   const prevPlansRef = useRef<ClientPlan[]>([]);
 
-  useEffect(() => {
+   useEffect(() => {
+    let storedPlans: string | null = null;
     try {
-      const storedPlans = localStorage.getItem(STORAGE_KEY);
+      storedPlans = localStorage.getItem(STORAGE_KEY);
       if (storedPlans) {
         const parsedPlans = JSON.parse(storedPlans);
         setPlans(parsedPlans);
         prevPlansRef.current = parsedPlans;
       }
     } catch (error) {
-      console.error("Failed to load plans from localStorage", error);
+       console.error("Failed to load plans from localStorage", error);
     }
     setIsLoaded(true);
   }, []);
@@ -32,32 +37,36 @@ export function useClientPlans() {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(plans));
 
-        // Detect changes and show toast
-        if (prevPlansRef.current.length > plans.length) {
-            toast({ title: "Plano deletado", variant: "destructive" });
-        } else if (prevPlansRef.current.length < plans.length) {
-            const newPlan = plans.find(p => !prevPlansRef.current.some(pp => pp.id === p.id));
-            if (newPlan) {
-                toast({ title: "Plano adicionado", description: `Plano para "${newPlan.name}" foi criado.` });
-            }
+        // Compare current plans with previous state to show relevant toast
+        if (plans.length > prevPlansRef.current.length) {
+          const newPlan = plans.find(p => !prevPlansRef.current.some(pp => pp.id === p.id));
+          if (newPlan) {
+            toast({ title: "Plano adicionado", description: `Plano para "${newPlan.name}" foi criado.` });
+          }
+        } else if (plans.length < prevPlansRef.current.length) {
+          const deletedPlan = prevPlansRef.current.find(pp => !plans.some(p => p.id === pp.id));
+          if(deletedPlan) {
+              toast({ title: "Plano deletado", variant: "destructive" });
+          }
         } else {
-            const updatedPlan = plans.find(p => {
-                const prevPlan = prevPlansRef.current.find(pp => pp.id === p.id);
-                return prevPlan && JSON.stringify(p) !== JSON.stringify(prevPlan);
-            });
-
-            if (updatedPlan) {
-                 const prevPlan = prevPlansRef.current.find(pp => pp.id === updatedPlan.id)!;
-                 if(updatedPlan.remainingCuts < prevPlan.remainingCuts){
-                    toast({ title: "Corte utilizado!", description: `Um corte foi debitado do plano de ${updatedPlan.name}.`});
-                 } else if (updatedPlan.remainingCuts > prevPlan.remainingCuts) {
-                    toast({ title: "Plano Reiniciado!", description: `O plano de ${updatedPlan.name} foi renovado.`});
-                 } else {
-                    toast({ title: "Plano atualizado", description: `Plano de "${updatedPlan.name}" foi atualizado.` });
-                 }
-            }
+           const updatedPlan = plans.find(p => {
+              const prevPlan = prevPlansRef.current.find(pp => pp.id === p.id);
+              return prevPlan && JSON.stringify(p) !== JSON.stringify(prevPlan);
+           });
+           if(updatedPlan) {
+              const prevPlan = prevPlansRef.current.find(pp => pp.id === updatedPlan.id)!;
+              if (updatedPlan.remainingCuts < prevPlan.remainingCuts) {
+                toast({ title: "Corte utilizado!", description: `Um corte foi debitado do plano de ${updatedPlan.name}.` });
+              } else if (updatedPlan.remainingCuts > prevPlan.remainingCuts) {
+                toast({ title: "Plano Reiniciado!", description: `O plano de ${updatedPlan.name} foi renovado.` });
+              } else {
+                toast({ title: "Plano atualizado", description: `Plano de "${updatedPlan.name}" foi atualizado.` });
+              }
+           }
         }
+
         prevPlansRef.current = plans;
+
       } catch (error) {
         console.error("Failed to save plans to localStorage", error);
         toast({
@@ -69,35 +78,42 @@ export function useClientPlans() {
     }
   }, [plans, isLoaded, toast]);
 
-  const addPlan = useCallback((planData: Omit<ClientPlan, 'id' | 'remainingCuts'>) => {
-    setPlans((prevPlans) => {
-        const newPlan: ClientPlan = {
-            id: new Date().toISOString() + Math.random(),
-            ...planData,
-            remainingCuts: planData.totalCuts,
-        };
-        return [...prevPlans, newPlan].sort((a,b) => a.name.localeCompare(b.name));
-    });
-  }, []);
+  const addPlan = useCallback((planData: Omit<ClientPlan, 'id' | 'remainingCuts'>, addToRevenue: boolean) => {
+    const newPlan: ClientPlan = {
+      id: new Date().toISOString() + Math.random(),
+      ...planData,
+      remainingCuts: planData.totalCuts,
+    };
+    setPlans((prev) => [...prev, newPlan].sort((a,b) => a.name.localeCompare(b.name)));
+
+    if (addToRevenue) {
+      addService({
+        name: `Plano - ${planData.name}`,
+        price: planData.price,
+        paymentMethod: 'dinheiro',
+        date: new Date().toISOString(),
+      });
+    }
+  }, [addService]);
 
   const updatePlan = useCallback((id: string, updatedPlanData: Omit<ClientPlan, 'id'>) => {
-    setPlans((prevPlans) =>
-      prevPlans.map((plan) => (plan.id === id ? { id, ...updatedPlanData } : plan))
+    setPlans((prev) =>
+      prev.map((plan) => (plan.id === id ? { id, ...updatedPlanData } : plan))
         .sort((a, b) => a.name.localeCompare(b.name))
     );
   }, []);
   
   const deletePlan = useCallback((id: string) => {
-    setPlans((prevPlans) => prevPlans.filter((plan) => plan.id !== id));
+    setPlans((prev) => prev.filter((plan) => plan.id !== id));
   }, []);
 
   const useCut = useCallback((id: string) => {
-    setPlans((prevPlans) =>
-      prevPlans.map((plan) => {
+    setPlans((prev) =>
+      prev.map((plan) => {
         if (plan.id === id && plan.remainingCuts > 0) {
           return { ...plan, remainingCuts: plan.remainingCuts - 1 };
         }
-        if(plan.id === id && plan.remainingCuts === 0) {
+        if (plan.id === id && plan.remainingCuts === 0) {
             toast({ title: "Atenção!", description: `O plano de ${plan.name} não tem cortes restantes.`, variant: "destructive"});
         }
         return plan;
@@ -105,16 +121,27 @@ export function useClientPlans() {
     );
   }, [toast]);
 
-  const resetCuts = useCallback((id: string) => {
-    setPlans((prevPlans) =>
-      prevPlans.map((plan) => {
+  const resetCuts = useCallback((id: string, addToRevenue: boolean) => {
+    let planToRenew: ClientPlan | undefined;
+    setPlans((prev) =>
+      prev.map((plan) => {
         if (plan.id === id) {
+          planToRenew = plan;
           return { ...plan, remainingCuts: plan.totalCuts };
         }
         return plan;
       })
     );
-  }, []);
+
+    if (addToRevenue && planToRenew) {
+      addService({
+        name: `Renovação - ${planToRenew.name}`,
+        price: planToRenew.price,
+        paymentMethod: 'dinheiro',
+        date: new Date().toISOString(),
+      });
+    }
+  }, [addService]);
 
 
   return { plans, addPlan, updatePlan, deletePlan, useCut, resetCuts, isLoaded };
