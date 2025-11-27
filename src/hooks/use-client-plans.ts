@@ -19,14 +19,10 @@ export function useClientPlans() {
       }
     } catch (error) {
       console.error("Failed to load plans from localStorage", error);
-      toast({
-        title: "Erro ao carregar planos",
-        description: "Não foi possível carregar os planos dos clientes.",
-        variant: "destructive",
-      });
+      // We can't toast here directly as it might be during SSR or initial render
     }
     setIsLoaded(true);
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     if (isLoaded) {
@@ -44,13 +40,15 @@ export function useClientPlans() {
   }, [plans, isLoaded, toast]);
 
   const addPlan = useCallback((planData: Omit<ClientPlan, 'id' | 'remainingCuts'>) => {
-    const newPlan: ClientPlan = {
-      id: new Date().toISOString() + Math.random(),
-      ...planData,
-      remainingCuts: planData.totalCuts,
-    };
-    setPlans((prevPlans) => [...prevPlans, newPlan].sort((a,b) => a.name.localeCompare(b.name)));
-    toast({ title: "Plano adicionado", description: `Plano para "${planData.name}" foi criado.` });
+    setPlans((prevPlans) => {
+        const newPlan: ClientPlan = {
+            id: new Date().toISOString() + Math.random(),
+            ...planData,
+            remainingCuts: planData.totalCuts,
+        };
+        toast({ title: "Plano adicionado", description: `Plano para "${planData.name}" foi criado.` });
+        return [...prevPlans, newPlan].sort((a,b) => a.name.localeCompare(b.name));
+    });
   }, [toast]);
 
   const updatePlan = useCallback((id: string, updatedPlanData: Omit<ClientPlan, 'id'>) => {

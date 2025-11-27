@@ -19,14 +19,10 @@ export function useServices() {
       }
     } catch (error) {
       console.error("Failed to load services from localStorage", error);
-      toast({
-        title: "Erro ao carregar dados",
-        description: "Não foi possível carregar os serviços salvos.",
-        variant: "destructive",
-      });
+       // We can't toast here directly as it might be during SSR or initial render
     }
     setIsLoaded(true);
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     if (isLoaded) {
@@ -44,12 +40,14 @@ export function useServices() {
   }, [services, isLoaded, toast]);
 
   const addService = useCallback((serviceData: Omit<Service, 'id'>) => {
-    const newService: Service = {
-        id: new Date().toISOString() + Math.random(),
-        ...serviceData,
-    }
-    setServices((prevServices) => [newService, ...prevServices].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-    toast({ title: "Serviço adicionado", description: `"${serviceData.name}" foi adicionado à lista.` });
+    setServices((prevServices) => {
+        const newService: Service = {
+            id: new Date().toISOString() + Math.random(),
+            ...serviceData,
+        }
+        toast({ title: "Serviço adicionado", description: `"${serviceData.name}" foi adicionado à lista.` });
+        return [newService, ...prevServices].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    });
   }, [toast]);
 
   const updateService = useCallback((id: string, updatedServiceData: Omit<Service, 'id'>) => {
@@ -66,10 +64,12 @@ export function useServices() {
   }, [toast]);
 
   const clearServices = useCallback(() => {
-    const todayServices = services.filter(s => new Date(s.date).toDateString() !== new Date().toDateString());
-    setServices(todayServices);
-    toast({ title: "Lista limpa", description: "Os serviços de hoje foram removidos.", variant: "destructive"});
-  }, [toast, services]);
+    setServices((prevServices) => {
+        const todayServices = prevServices.filter(s => new Date(s.date).toDateString() !== new Date().toDateString());
+        toast({ title: "Lista limpa", description: "Os serviços de hoje foram removidos.", variant: "destructive"});
+        return todayServices;
+    });
+  }, [toast]);
 
   return { services, addService, updateService, deleteService, clearServices, isLoaded };
 }
