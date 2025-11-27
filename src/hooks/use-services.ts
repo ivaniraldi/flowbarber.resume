@@ -48,7 +48,11 @@ export function useServices() {
       try {
         localStorage.setItem(SERVICES_STORAGE_KEY, JSON.stringify(services));
         
-        if (services.length > prevServicesRef.current.length) {
+        const numAdded = services.length - prevServicesRef.current.length;
+
+        if (numAdded > 1) {
+            toast({ title: "Importação Concluída", description: `${numAdded} serviços foram importados com sucesso.` });
+        } else if (numAdded === 1) {
           const newService = services.find(s => !prevServicesRef.current.some(ps => ps.id === s.id));
           if (newService) {
             toast({ title: "Serviço adicionado", description: `"${newService.name}" foi adicionado à lista.` });
@@ -101,6 +105,21 @@ export function useServices() {
         return [newService, ...prevServices].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     });
   }, []);
+  
+  const addBulkServices = useCallback((servicesData: Omit<Service, 'id'>[]) => {
+    setServices(prevServices => {
+        const newServices: Service[] = servicesData.map(serviceData => ({
+            id: new Date(serviceData.date).toISOString() + serviceData.name + Math.random(),
+            ...serviceData,
+        }));
+        
+        const combinedServices = [...prevServices, ...newServices];
+        const uniqueServices = Array.from(new Map(combinedServices.map(s => [s.id, s])).values());
+        
+        return uniqueServices.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    });
+}, []);
+
 
   const updateService = useCallback((id: string, updatedServiceData: Omit<Service, 'id'>) => {
     setServices((prevServices) =>
@@ -124,5 +143,5 @@ export function useServices() {
     setPredefinedServices(newPredefinedServices);
   }, []);
 
-  return { services, addService, updateService, deleteService, clearServices, isLoaded, predefinedServices, savePredefinedServices };
+  return { services, addService, updateService, deleteService, clearServices, isLoaded, predefinedServices, savePredefinedServices, addBulkServices };
 }

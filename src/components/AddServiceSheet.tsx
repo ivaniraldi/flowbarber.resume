@@ -34,7 +34,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Banknote, CreditCard, CalendarIcon } from "lucide-react";
 import { ScrollArea } from "./ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 interface AddServiceSheetProps {
@@ -95,7 +95,7 @@ export function AddServiceSheet({
         name: serviceToEdit.name,
         price: serviceToEdit.price,
         paymentMethod: serviceToEdit.paymentMethod,
-        date: new Date(serviceToEdit.date),
+        date: parse(serviceToEdit.date, 'yyyy-MM-dd', new Date()),
       });
       setSelectedServices([]);
     }
@@ -115,7 +115,7 @@ export function AddServiceSheet({
     if (data.name && data.price > 0) {
         const serviceData = {
           ...data,
-          date: data.date.toISOString(),
+          date: format(data.date, 'yyyy-MM-dd'),
         }
         onSave(serviceData);
     }

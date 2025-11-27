@@ -5,7 +5,7 @@ export type Service = {
   name: string;
   price: number;
   paymentMethod: PaymentMethod;
-  date: string;
+  date: string; // Stored as 'yyyy-MM-dd'
 };
 
 export type PredefinedService = {

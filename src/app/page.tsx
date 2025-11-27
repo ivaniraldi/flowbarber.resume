@@ -25,6 +25,7 @@ import { Plus, RefreshCw, Scissors, FileText } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
 import jsPDF from "jspdf";
+import { parse, format } from "date-fns";
 
 
 export default function Home() {
@@ -42,7 +43,8 @@ export default function Home() {
   );
 
   const services = useMemo(() => {
-    return allServices.filter(s => new Date(s.date).toDateString() === new Date().toDateString())
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    return allServices.filter(s => s.date === todayStr);
   }, [allServices]);
 
   const summary = useMemo(() => {

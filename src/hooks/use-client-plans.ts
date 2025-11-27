@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { ClientPlan, Service, PaymentMethod } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 const STORAGE_KEY = "flow-report-client-plans";
 
@@ -93,7 +94,7 @@ export function useClientPlans({ addService }: UseClientPlansProps) {
         name: `Plano - ${planData.name}`,
         price: planData.price,
         paymentMethod: paymentDetails.paymentMethod,
-        date: new Date().toISOString(),
+        date: format(new Date(), 'yyyy-MM-dd'),
       });
     }
   }, [addService]);
@@ -140,7 +141,7 @@ export function useClientPlans({ addService }: UseClientPlansProps) {
         name: `Renovação - ${planToRenew.name}`,
         price: planToRenew.price,
         paymentMethod: paymentDetails.paymentMethod,
-        date: new Date().toISOString(),
+        date: format(new Date(), 'yyyy-MM-dd'),
       });
     }
   }, [addService]);
