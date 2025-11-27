@@ -5,8 +5,8 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { PREDEFINED_SERVICES } from "@/lib/constants";
 import type { Service, PredefinedService } from "@/lib/types";
+import { useServices } from "@/hooks/use-services";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -62,6 +62,7 @@ export function AddServiceSheet({
   serviceToEdit,
 }: AddServiceSheetProps) {
   const [selectedServices, setSelectedServices] = useState<PredefinedService[]>([]);
+  const { predefinedServices } = useServices();
   
   const form = useForm<z.infer<typeof serviceSchema>>({
     resolver: zodResolver(serviceSchema),
@@ -163,7 +164,7 @@ export function AddServiceSheet({
                     <TabsTrigger value="custom">Personalizado</TabsTrigger>
                   </TabsList>
                   <TabsContent value="predefined" className="mt-4 space-y-2">
-                    {PREDEFINED_SERVICES.map((service) => (
+                    {predefinedServices.map((service) => (
                       <Button
                         type="button"
                         key={service.name}
@@ -338,5 +339,3 @@ export function AddServiceSheet({
     </Sheet>
   );
 }
-
-    

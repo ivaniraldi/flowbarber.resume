@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from 'next/navigation'
-import { BarChart, Home, Scissors, Users } from "lucide-react";
+import { BarChart, Home, Scissors, Users, Settings } from "lucide-react";
 import { Button } from "./ui/button";
 
 interface HeaderProps {
@@ -46,6 +46,12 @@ export function Header({ title, children, showAnalyticsButton }: HeaderProps) {
                         <Button variant={pathname === '/analytics' ? 'secondary' : 'ghost'} size="sm">
                             <BarChart className="h-4 w-4" />
                             <span className="hidden sm:inline-block ml-2">Análises</span>
+                        </Button>
+                    </Link>
+                    <Link href="/settings" passHref>
+                        <Button variant={pathname === '/settings' ? 'secondary' : 'ghost'} size="sm">
+                            <Settings className="h-4 w-4" />
+                            <span className="hidden sm:inline-block ml-2">Ajustes</span>
                         </Button>
                     </Link>
                 </nav>
