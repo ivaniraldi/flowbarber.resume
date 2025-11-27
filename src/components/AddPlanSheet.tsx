@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import type { ClientPlan } from "@/lib/types";
+import type { ClientPlan, PaymentMethod } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -40,7 +40,7 @@ import {
 interface AddPlanSheetProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSave: (plan: Omit<ClientPlan, 'id' | 'remainingCuts'>, addToRevenue: boolean) => void;
+  onSave: (plan: Omit<ClientPlan, 'id' | 'remainingCuts'>, paymentDetails: { addToRevenue: boolean, paymentMethod?: PaymentMethod }) => void;
   planToEdit?: ClientPlan;
 }
 
@@ -90,16 +90,16 @@ export function AddPlanSheet({
 
   const onSubmit = (data: PlanFormData) => {
     if (planToEdit) {
-      onSave(data, false); // Don't show confirmation for edits
+      onSave(data, { addToRevenue: false }); // Don't show confirmation for edits
     } else {
       setFormData(data);
       setShowConfirmation(true);
     }
   };
 
-  const handleConfirm = (addToRevenue: boolean) => {
+  const handleConfirm = (paymentDetails: { addToRevenue: boolean, paymentMethod?: PaymentMethod }) => {
     if (formData) {
-      onSave(formData, addToRevenue);
+      onSave(formData, paymentDetails);
     }
     setShowConfirmation(false);
     setFormData(null);
@@ -197,9 +197,11 @@ export function AddPlanSheet({
                     Ao confirmar, este valor será adicionado à receita de hoje.
                 </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogAction onClick={() => handleConfirm(false)} variant="outline">Salvar sem adicionar à receita</AlertDialogAction>
-                    <AlertDialogAction onClick={() => handleConfirm(true)}>Confirmar Pagamento e Salvar</AlertDialogAction>
+                <AlertDialogFooter className="sm:flex-col sm:gap-2 sm:space-x-0">
+                    <AlertDialogAction onClick={() => handleConfirm({ addToRevenue: true, paymentMethod: 'dinheiro'})}>Confirmar com Dinheiro</AlertDialogAction>
+                    <AlertDialogAction onClick={() => handleConfirm({ addToRevenue: true, paymentMethod: 'pagamento online'})}>Confirmar com Pagamento Online</AlertDialogAction>
+                    <AlertDialogAction onClick={() => handleConfirm({ addToRevenue: false })} variant="outline">Salvar sem adicionar à receita</AlertDialogAction>
+                    <AlertDialogCancel className="w-full mt-2 sm:mt-0" onClick={() => setFormData(null)}>Cancelar</AlertDialogCancel>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

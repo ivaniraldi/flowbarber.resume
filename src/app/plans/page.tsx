@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import type { ClientPlan } from "@/lib/types";
+import type { ClientPlan, PaymentMethod } from "@/lib/types";
 import { useClientPlans } from "@/hooks/use-client-plans";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -40,11 +40,11 @@ export default function PlansPage() {
     setIsSheetOpen(true);
   };
 
-  const handleSavePlan = (planData: Omit<ClientPlan, 'id' | 'remainingCuts'>, addToRevenue: boolean) => {
+  const handleSavePlan = (planData: Omit<ClientPlan, 'id' | 'remainingCuts'>, paymentDetails: { addToRevenue: boolean; paymentMethod?: PaymentMethod }) => {
     if (planToEdit) {
       updatePlan(planToEdit.id, { ...planToEdit, ...planData });
     } else {
-      addPlan(planData, addToRevenue);
+      addPlan(planData, paymentDetails);
     }
     setIsSheetOpen(false);
   };
@@ -137,13 +137,14 @@ export default function PlansPage() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Renovar plano?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Isso irá reiniciar a contagem de cortes para o plano de "{plan.name}" para {plan.totalCuts} cortes.
+                            Deseja registrar o pagamento de R$ {plan.price.toFixed(2)} para a renovação do plano de "{plan.name}"?
                           </AlertDialogDescription>
                         </AlertDialogHeader>
-                        <AlertDialogFooter className="flex-col-reverse gap-2">
-                          <AlertDialogAction className="w-full" onClick={() => resetCuts(plan.id, true)}>Confirmar Pagamento e Renovar</AlertDialogAction>
-                          <AlertDialogAction className="w-full" onClick={() => resetCuts(plan.id, false)} variant="outline">Renovar sem adicionar receita</AlertDialogAction>
-                          <AlertDialogCancel className="w-full">Cancelar</AlertDialogCancel>
+                        <AlertDialogFooter className="sm:flex-col sm:gap-2 sm:space-x-0">
+                          <AlertDialogAction className="w-full" onClick={() => resetCuts(plan.id, { addToRevenue: true, paymentMethod: 'dinheiro'})}>Confirmar com Dinheiro</AlertDialogAction>
+                          <AlertDialogAction className="w-full" onClick={() => resetCuts(plan.id, { addToRevenue: true, paymentMethod: 'pagamento online'})}>Confirmar com Pagamento Online</AlertDialogAction>
+                          <AlertDialogAction className="w-full" onClick={() => resetCuts(plan.id, {addToRevenue: false})} variant="outline">Renovar sem adicionar receita</AlertDialogAction>
+                          <AlertDialogCancel className="w-full mt-2 sm:mt-0">Cancelar</AlertDialogCancel>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>

@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { ClientPlan, Service } from "@/lib/types";
+import type { ClientPlan, Service, PaymentMethod } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 
 const STORAGE_KEY = "flow-report-client-plans";
@@ -35,6 +35,8 @@ export function useClientPlans({ addService }: UseClientPlansProps) {
   useEffect(() => {
     if (isLoaded) {
       try {
+        if (JSON.stringify(plans) === JSON.stringify(prevPlansRef.current)) return;
+
         localStorage.setItem(STORAGE_KEY, JSON.stringify(plans));
 
         // Compare current plans with previous state to show relevant toast
@@ -78,7 +80,7 @@ export function useClientPlans({ addService }: UseClientPlansProps) {
     }
   }, [plans, isLoaded, toast]);
 
-  const addPlan = useCallback((planData: Omit<ClientPlan, 'id' | 'remainingCuts'>, addToRevenue: boolean) => {
+  const addPlan = useCallback((planData: Omit<ClientPlan, 'id' | 'remainingCuts'>, paymentDetails: { addToRevenue: boolean, paymentMethod?: PaymentMethod }) => {
     const newPlan: ClientPlan = {
       id: new Date().toISOString() + Math.random(),
       ...planData,
@@ -86,11 +88,11 @@ export function useClientPlans({ addService }: UseClientPlansProps) {
     };
     setPlans((prev) => [...prev, newPlan].sort((a,b) => a.name.localeCompare(b.name)));
 
-    if (addToRevenue) {
+    if (paymentDetails.addToRevenue && paymentDetails.paymentMethod) {
       addService({
         name: `Plano - ${planData.name}`,
         price: planData.price,
-        paymentMethod: 'dinheiro',
+        paymentMethod: paymentDetails.paymentMethod,
         date: new Date().toISOString(),
       });
     }
@@ -121,7 +123,7 @@ export function useClientPlans({ addService }: UseClientPlansProps) {
     );
   }, [toast]);
 
-  const resetCuts = useCallback((id: string, addToRevenue: boolean) => {
+  const resetCuts = useCallback((id: string, paymentDetails: { addToRevenue: boolean, paymentMethod?: PaymentMethod }) => {
     let planToRenew: ClientPlan | undefined;
     setPlans((prev) =>
       prev.map((plan) => {
@@ -133,11 +135,11 @@ export function useClientPlans({ addService }: UseClientPlansProps) {
       })
     );
 
-    if (addToRevenue && planToRenew) {
+    if (paymentDetails.addToRevenue && paymentDetails.paymentMethod && planToRenew) {
       addService({
         name: `Renovação - ${planToRenew.name}`,
         price: planToRenew.price,
-        paymentMethod: 'dinheiro',
+        paymentMethod: paymentDetails.paymentMethod,
         date: new Date().toISOString(),
       });
     }
