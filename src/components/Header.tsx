@@ -3,10 +3,8 @@
 
 import Link from "next/link";
 import { usePathname } from 'next/navigation'
-import { BarChart, Home, Scissors } from "lucide-react";
+import { BarChart, Home, Scissors, Users } from "lucide-react";
 import { Button } from "./ui/button";
-import { cn } from "@/lib/utils";
-
 
 interface HeaderProps {
   title: string;
@@ -36,6 +34,12 @@ export function Header({ title, children, showAnalyticsButton }: HeaderProps) {
                          <Button variant={pathname === '/' ? 'secondary' : 'ghost'} size="sm">
                             <Home className="h-4 w-4" />
                             <span className="hidden sm:inline-block ml-2">Início</span>
+                        </Button>
+                    </Link>
+                    <Link href="/plans" passHref>
+                         <Button variant={pathname === '/plans' ? 'secondary' : 'ghost'} size="sm">
+                            <Users className="h-4 w-4" />
+                            <span className="hidden sm:inline-block ml-2">Planos</span>
                         </Button>
                     </Link>
                     <Link href="/analytics" passHref>

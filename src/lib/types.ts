@@ -12,3 +12,11 @@ export type PredefinedService = {
   name: string;
   price: number;
 };
+
+export type ClientPlan = {
+  id: string;
+  name: string;
+  price: number;
+  totalCuts: number;
+  remainingCuts: number;
+};
