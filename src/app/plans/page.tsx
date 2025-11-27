@@ -140,10 +140,10 @@ export default function PlansPage() {
                             Isso irá reiniciar a contagem de cortes para o plano de "{plan.name}" para {plan.totalCuts} cortes.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
-                        <AlertDialogFooter>
+                        <AlertDialogFooter className="flex-col-reverse sm:flex-col-reverse gap-2 sm:gap-2">
+                          <AlertDialogAction onClick={() => resetCuts(plan.id, true)}>Confirmar Pagamento e Renovar</AlertDialogAction>
+                          <AlertDialogAction onClick={() => resetCuts(plan.id, false)} variant="outline">Renovar sem adicionar receita</AlertDialogAction>
                           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => resetCuts(plan.id, false)}>Renovar sem adicionar receita</AlertDialogAction>
-                           <AlertDialogAction onClick={() => resetCuts(plan.id, true)}>Confirmar Pagamento e Renovar</AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
