@@ -29,23 +29,29 @@ import {
 } from '@/components/ui/select';
 import { useServices } from '@/hooks/use-services';
 import type { Service } from '@/lib/types';
-import { subDays, format, parse, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, getDate, setDate, startOfYear, endOfYear, getMonth, setMonth, startOfQuarter, endOfQuarter } from 'date-fns';
+import { subDays, format, parse, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, getDate, setDate, startOfYear, endOfYear, getMonth, setMonth, startOfQuarter, endOfQuarter, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Header } from '@/components/Header';
-import { Banknote, CreditCard, Wallet, Scissors, FileText, Upload } from 'lucide-react';
+import { Banknote, CreditCard, Wallet, Scissors, FileText, Upload, Calendar as CalendarIcon } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import WhatsAppIcon from '@/components/icons/WhatsAppIcon';
 import jsPDF from 'jspdf';
 import { ImportDataSheet } from '@/components/ImportDataSheet';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import type { DateRange } from 'react-day-picker';
+import { cn } from '@/lib/utils';
 
 
-type RangeKey = '7' | '15' | '30' | '180' | '365' | 'all';
+type RangeKey = '7' | '15' | '30' | 'last_month' | '180' | '365' | 'all' | 'custom';
 
 export default function AnalyticsPage() {
   const { services: allServices, isLoaded, addBulkServices } = useServices();
   const [range, setRange] = useState<RangeKey>('7');
   const [isImportSheetOpen, setIsImportSheetOpen] = useState(false);
+  const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>(undefined);
+
 
   const { services, startDate, endDate } = useMemo(() => {
     const now = new Date();
@@ -67,6 +73,11 @@ export default function AnalyticsPage() {
         start = startOfMonth(now);
         end = endOfMonth(now);
         break;
+      case 'last_month':
+        const lastMonth = subMonths(now, 1);
+        start = startOfMonth(lastMonth);
+        end = endOfMonth(lastMonth);
+        break;
       case '180':
         const currentMonth = getMonth(now);
         if (currentMonth < 6) { // Primeiro semestre
@@ -81,6 +92,10 @@ export default function AnalyticsPage() {
       case '365':
         start = startOfYear(now);
         end = endOfYear(now);
+        break;
+      case 'custom':
+        start = customDateRange?.from || now;
+        end = customDateRange?.to || now;
         break;
       case 'all':
         if (allServices.length > 0) {
@@ -103,7 +118,7 @@ export default function AnalyticsPage() {
     );
 
     return { services: filtered, startDate: start, endDate: end };
-  }, [allServices, range]);
+  }, [allServices, range, customDateRange]);
 
   const summary = useMemo(() => {
     return services.reduce(
@@ -122,7 +137,7 @@ export default function AnalyticsPage() {
   }, [services]);
 
   const chartData = useMemo(() => {
-    const isLongRange = ['180', '365', 'all'].includes(range);
+    const isLongRange = ['180', '365', 'all'].includes(range) || (range === 'custom' && endDate && startDate && (endDate.getTime() - startDate.getTime()) > 31 * 24 * 60 * 60 * 1000);
     const dateParseFormat = 'yyyy-MM-dd';
     
     if (isLongRange) {
@@ -183,9 +198,11 @@ export default function AnalyticsPage() {
     '7': 'Resumo Semanal',
     '15': 'Resumo Quincenal',
     '30': 'Resumo Mensal',
+    'last_month': 'Resumo Mês Anterior',
     '180': 'Resumo Semestral',
     '365': 'Resumo Anual',
     'all': 'Resumo Histórico',
+    'custom': 'Resumo Personalizado',
   };
   const currentRangeLabel = rangeLabels[range];
 
@@ -318,12 +335,12 @@ ${services
       <div className="min-h-screen text-foreground">
         <Header title="FlowBarber" showAnalyticsButton />
         <main className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h2 className="text-2xl font-bold tracking-tight">Painel de Análises</h2>
               <p className="text-muted-foreground">{dateRangeLabel}</p>
             </div>
-            <div className="flex flex-col sm:flex-row w-full sm:w-auto items-center gap-2">
+            <div className="flex flex-col sm:flex-row w-full sm:w-auto items-stretch sm:items-center gap-2">
               <Select onValueChange={(value: RangeKey) => setRange(value)} defaultValue={range}>
                 <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Selecione o período" />
@@ -332,12 +349,52 @@ ${services
                   <SelectItem value="7">Esta Semana</SelectItem>
                   <SelectItem value="15">Esta Quinzena</SelectItem>
                   <SelectItem value="30">Este Mês</SelectItem>
+                  <SelectItem value="last_month">Mês Anterior</SelectItem>
                   <SelectItem value="180">Este Semestre</SelectItem>
                   <SelectItem value="365">Este Ano</SelectItem>
                   <SelectItem value="all">Histórico</SelectItem>
+                  <SelectItem value="custom">Personalizado</SelectItem>
                 </SelectContent>
               </Select>
-              <div className='flex gap-2'>
+               {range === 'custom' && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="date"
+                      variant={"outline"}
+                      className={cn(
+                        "w-full sm:w-[300px] justify-start text-left font-normal",
+                        !customDateRange && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {customDateRange?.from ? (
+                        customDateRange.to ? (
+                          <>
+                            {format(customDateRange.from, "LLL dd, y")} -{" "}
+                            {format(customDateRange.to, "LLL dd, y")}
+                          </>
+                        ) : (
+                          format(customDateRange.from, "LLL dd, y")
+                        )
+                      ) : (
+                        <span>Escolha um intervalo</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar
+                      initialFocus
+                      mode="range"
+                      defaultMonth={customDateRange?.from}
+                      selected={customDateRange}
+                      onSelect={setCustomDateRange}
+                      numberOfMonths={2}
+                    />
+                  </PopoverContent>
+                </Popover>
+              )}
+              <div className='flex gap-2 self-end'>
                 <Button variant="outline" onClick={() => setIsImportSheetOpen(true)}>
                     <Upload className="h-5 w-5 mr-2" />
                     Importar Dados
@@ -433,3 +490,5 @@ ${services
     </>
   );
 }
+
+    
